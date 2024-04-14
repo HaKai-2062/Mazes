@@ -8,7 +8,7 @@ public:
     Maze(uint16_t width, uint16_t height)
         : m_MazeWidth(width), m_MazeHeight(height) 
     {
-        std::cout << "Maze created" << std::endl;
+        std::cout << "Maze Created" << std::endl;
     }
 
     Maze() = delete;
@@ -17,7 +17,7 @@ public:
 
 	~Maze()
 	{
-		std::cout << "Maze destroyed" << std::endl;
+		std::cout << "Maze Destroyed" << std::endl;
 
         ClearMazeVariables();
 	}

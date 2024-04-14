@@ -21,6 +21,24 @@ const uint16_t SCR_HEIGHT = 1000;
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
+const char* vertexShader = "#version 330 core\n"
+"layout (location = 0) in vec2 aPos;\n"
+"layout(location = 1) in vec4 aColor; \n"
+"out vec4 ourColor;\n"
+"void main()\n"
+"{\n"
+"    gl_Position = vec4(aPos.xy, 1.0, 1.0);\n"
+"    ourColor = aColor;\n"
+"}\n";
+
+const char* fragmentShader = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"in vec4 ourColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = ourColor;\n"
+"}\n";
+
 int main()
 {
     srand(clock());
@@ -46,7 +64,7 @@ int main()
         return -1;
     }
 
-    Shader backgroundShader("resources\\rect.vs", "resources\\rect.ps");
+    Shader backgroundShader(vertexShader, fragmentShader, true);
 
     uint32_t VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -63,6 +81,8 @@ int main()
     uint32_t startCoordinate = rand() % static_cast<uint32_t>(cellsInOneAxis * cellsInOneAxis - 1);
     std::stack<uint32_t> stack;
     stack.push(startCoordinate);
+    
+    bool mazeBuilt = false;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -87,9 +107,10 @@ int main()
         {
             MazeBuilder::RecursiveBacktrack(mazeObject.m_VisitedCellInfo, stack, totalCellWidth, mazeObject.m_VisitedCellCount);
         }
-        else
+        else if (!mazeBuilt)
         {
-            // std::cout << "Completed\n";
+            std::cout << "Maze Generated\n";
+            mazeBuilt = true;
             // Solve the maze here if needed
         }
 
@@ -115,7 +136,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        //std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     glDeleteVertexArrays(1, &VAO);
