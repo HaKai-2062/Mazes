@@ -15,8 +15,8 @@ void processInput(GLFWwindow* window);
 void displayFPS(GLFWwindow* pWindow);
 
 // settings
-const uint16_t SCR_WIDTH = 1920;
-const uint16_t SCR_HEIGHT = 1080;
+const uint16_t SCR_WIDTH = 1280;
+const uint16_t SCR_HEIGHT = 720;
 
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame

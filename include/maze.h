@@ -138,8 +138,8 @@ public:
     };
 
     // These values are in pixels
-    uint16_t m_HalfCellHeight = 20;
-    uint16_t m_WallThickness = 4;
+    uint16_t m_HalfCellHeight = 10;
+    uint16_t m_WallThickness = 2;
     uint16_t totalCellHeight = 2 * m_HalfCellHeight + m_WallThickness;
 
     // can be: 0.045, 0.02, 0.01 etc
