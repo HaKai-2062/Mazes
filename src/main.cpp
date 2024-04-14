@@ -12,6 +12,7 @@
 
 void callbackResize(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+void displayFPS(GLFWwindow* pWindow);
 
 // settings
 const uint16_t SCR_WIDTH = 1000;
@@ -89,7 +90,7 @@ int main()
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-
+        displayFPS(window);
         processInput(window);
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -151,6 +152,22 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+}
+
+void displayFPS(GLFWwindow* pWindow)
+{
+    static std::chrono::time_point<std::chrono::steady_clock> oldTime = std::chrono::high_resolution_clock::now();
+    static int fps;
+    fps++;
+
+    if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - oldTime) >= std::chrono::seconds{ 1 })
+    {
+        oldTime = std::chrono::high_resolution_clock::now();
+        std::stringstream ss;
+        ss << "Maze, " << "FPS: " << fps;
+        glfwSetWindowTitle(pWindow, ss.str().c_str());
+        fps = 0;
+    }
 }
 
 void callbackResize(GLFWwindow* window, int width, int height)
