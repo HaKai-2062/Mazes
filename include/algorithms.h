@@ -2,32 +2,32 @@
 
 #include <stack>
 
-
 namespace MazeBuilder
 {
-	void RecursiveBacktrack(std::map<uint32_t, uint16_t>& visitedCellInfo, std::stack<uint32_t>& stack, float totalCellWidth, uint32_t& visitedCellCount)
+	void RecursiveBacktrack(Maze& maze, std::stack<uint32_t>& stack)
 	{
 		std::vector<uint8_t> neighbours;
 
-		uint16_t cellsInOneAxis = static_cast<uint16_t>(2 / totalCellWidth);
+		// To get negative results for checks
+		int64_t currentCell = static_cast<int64_t>(stack.top());
 
 		// North
-		if ((stack.top() + 1) % cellsInOneAxis != 0 && (visitedCellInfo[stack.top() + 1] & Maze::CELL_VISITED) == 0)
+		if (((currentCell + 1) % maze.m_CellsAcrossHeight) != 0 && (maze.m_VisitedCellInfo[currentCell + 1] & Maze::CELL_VISITED) == 0)
 		{
 			neighbours.push_back(0);
 		}
-		// East, casted to avoid warning
-		if (stack.top() < static_cast<uint32_t>(cellsInOneAxis * cellsInOneAxis - cellsInOneAxis) && (visitedCellInfo[stack.top() + cellsInOneAxis] & Maze::CELL_VISITED) == 0)
+		// East
+		if ((currentCell + maze.m_CellsAcrossHeight) < (maze.m_CellsAcrossWidth * maze.m_CellsAcrossHeight) && (maze.m_VisitedCellInfo[currentCell + maze.m_CellsAcrossHeight] & Maze::CELL_VISITED) == 0)
 		{
 			neighbours.push_back(1);
 		}
 		// South
-		if (stack.top() % cellsInOneAxis != 0 && (visitedCellInfo[stack.top() - 1] & Maze::CELL_VISITED) == 0)
+		if ((currentCell % maze.m_CellsAcrossHeight) != 0 && (maze.m_VisitedCellInfo[currentCell - 1] & Maze::CELL_VISITED) == 0)
 		{
 			neighbours.push_back(2);
 		}
-		// West, casted to avoid warning
-		if (stack.top() > static_cast<uint32_t>(cellsInOneAxis-1) && (visitedCellInfo[stack.top() - cellsInOneAxis] & Maze::CELL_VISITED) == 0)
+		// West
+		if (currentCell - maze.m_CellsAcrossHeight >= 0 && (maze.m_VisitedCellInfo[currentCell - maze.m_CellsAcrossHeight] & Maze::CELL_VISITED) == 0)
 		{
 			neighbours.push_back(3);
 		}
@@ -40,31 +40,32 @@ namespace MazeBuilder
 			{
 
 			case 0:
-				visitedCellInfo[stack.top() + 1] |= Maze::CELL_VISITED | Maze::CELL_SOUTH;
-				visitedCellInfo[stack.top()] |= Maze::CELL_NORTH;
-				stack.push(stack.top() + 1);
+				maze.m_VisitedCellInfo[currentCell + 1] |= Maze::CELL_VISITED | Maze::CELL_SOUTH;
+				maze.m_VisitedCellInfo[currentCell] |= Maze::CELL_NORTH;
+				stack.push(currentCell + 1);
 				break;
 
 			case 1:
-				visitedCellInfo[stack.top() + cellsInOneAxis] |= Maze::CELL_VISITED | Maze::CELL_WEST;
-				visitedCellInfo[stack.top()] |= Maze::CELL_EAST;
-				stack.push(stack.top() + cellsInOneAxis);
+				maze.m_VisitedCellInfo[currentCell + maze.m_CellsAcrossHeight] |= Maze::CELL_VISITED | Maze::CELL_WEST;
+				maze.m_VisitedCellInfo[currentCell] |= Maze::CELL_EAST;
+				stack.push(currentCell + maze.m_CellsAcrossHeight);
 				break;
 
 			case 2:
-				visitedCellInfo[stack.top() - 1] |= Maze::CELL_VISITED | Maze::CELL_NORTH;
-				visitedCellInfo[stack.top()] |= Maze::CELL_SOUTH;
-				stack.push(stack.top() - 1);
+				maze.m_VisitedCellInfo[currentCell - 1] |= Maze::CELL_VISITED | Maze::CELL_NORTH;
+				maze.m_VisitedCellInfo[currentCell] |= Maze::CELL_SOUTH;
+				stack.push(currentCell - 1);
 				break;
 
 			case 3:
-				visitedCellInfo[stack.top() - cellsInOneAxis] |= Maze::CELL_VISITED | Maze::CELL_EAST;
-				visitedCellInfo[stack.top()] |= Maze::CELL_WEST;
-				stack.push(stack.top() - cellsInOneAxis);
+				maze.m_VisitedCellInfo[currentCell - maze.m_CellsAcrossHeight] |= Maze::CELL_VISITED | Maze::CELL_EAST;
+				maze.m_VisitedCellInfo[currentCell] |= Maze::CELL_WEST;
+				stack.push(currentCell - maze.m_CellsAcrossHeight);
 				break;
+
 			}
 
-			visitedCellCount++;
+			maze.m_VisitedCellCount++;
 		}
 		else
 		{

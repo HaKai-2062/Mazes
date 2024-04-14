@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <stack>
 
 class Maze
 {
@@ -9,6 +10,8 @@ public:
         : m_MazeWidth(width), m_MazeHeight(height) 
     {
         std::cout << "Maze Created" << std::endl;
+        m_CellsAcrossWidth = static_cast<uint16_t>(floor(width / totalCellHeight));
+        m_CellsAcrossHeight = static_cast<uint16_t>(floor(height / totalCellHeight));
     }
 
     Maze() = delete;
@@ -18,21 +21,21 @@ public:
 	~Maze()
 	{
 		std::cout << "Maze Destroyed" << std::endl;
-
-        ClearMazeVariables();
 	}
 
-	uint32_t DrawMaze(std::vector<std::pair<float, float>>& vertices, std::vector<uint32_t>& indices, uint32_t stackTop)
+	uint32_t DrawMaze(std::vector<std::pair<float, float>>& vertices, std::vector<uint32_t>& indices, const std::stack<uint32_t>& stack)
 	{
+        uint32_t currentCell = 0;
+
         auto colorOfVertex = [&]()
         {
             // RG, BA color of each block
-            if (m_CellCount == stackTop)
+            if (!stack.empty() && currentCell == stack.top())
             {
                 vertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
                 vertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
             }
-            else if (m_VisitedCellInfo.find(m_CellCount) != m_VisitedCellInfo.end() && m_VisitedCellInfo[m_CellCount] & CELL_VISITED)
+            else if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && m_VisitedCellInfo[currentCell] & CELL_VISITED)
             {
                 vertices.push_back(std::make_pair<float, float>(1.0f, 1.0f));
                 vertices.push_back(std::make_pair<float, float>(1.0f, 1.0f));
@@ -44,66 +47,77 @@ public:
             }
         };
 
+        // We are multiplying by 2 because the coordinate go from -1 to 1 instead of 0 to 1
+        float normalizedHalfCellWidth = static_cast<float>(2 * m_HalfCellHeight) / (m_MazeWidth);
+        float normalizedHalfCellHeight = static_cast<float>(2 * m_HalfCellHeight) / (m_MazeHeight);
+        float normalizedWallThickness = static_cast<float>(2 * m_WallThickness) / (m_MazeHeight);
+
+        float normalizedTotalCellWidth = static_cast<float>(2 * totalCellHeight) / (m_MazeWidth);
+        float normalizedTotalCellHeight = static_cast<float>(2 * totalCellHeight) / (m_MazeHeight);
+
         // This goes from bottomRight (-1, -1) to topLeft (1, 1)
         // WIDTH
-        for (float i = -1.0f; i < 1.0f; i += 2 * m_HalfCellHeight + m_WallThickness)
+        for (float i = -1.0f; i < 1.0f; i += normalizedTotalCellWidth)
         {
-            // HEIGHT
-            for (float j = -1.0f; j < 1.0f; j += 2 * m_HalfCellHeight + m_WallThickness)
+            // To not draw out of bound cells
+            if (i + 2 * normalizedHalfCellWidth > 1)
             {
+                continue;
+            }
+            // HEIGHT
+            for (float j = -1.0f; j < 1.0f; j += normalizedTotalCellHeight)
+            {
+                if (j + 2 * normalizedHalfCellHeight > 1)
+                {
+                    continue;
+                }
+
                 bool isWallEast = true;
-                if (m_VisitedCellInfo.find(m_CellCount) != m_VisitedCellInfo.end() && m_VisitedCellInfo[m_CellCount] & CELL_EAST)
+                if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && m_VisitedCellInfo[currentCell] & CELL_EAST)
                     isWallEast = false;
 
                 bool isWallSouth = true;
-                if (m_VisitedCellInfo.find(m_CellCount) != m_VisitedCellInfo.end() && m_VisitedCellInfo[m_CellCount] & CELL_SOUTH)
+                if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && m_VisitedCellInfo[currentCell] & CELL_SOUTH)
                     isWallSouth = false;
 
-                indices.push_back((4 * m_CellCount) + 0);
-                indices.push_back((4 * m_CellCount) + 1);
-                indices.push_back((4 * m_CellCount) + 3);
-                indices.push_back((4 * m_CellCount) + 1);
-                indices.push_back((4 * m_CellCount) + 2);
-                indices.push_back((4 * m_CellCount) + 3);
+                indices.push_back((4 * currentCell) + 0);
+                indices.push_back((4 * currentCell) + 1);
+                indices.push_back((4 * currentCell) + 3);
+                indices.push_back((4 * currentCell) + 1);
+                indices.push_back((4 * currentCell) + 2);
+                indices.push_back((4 * currentCell) + 3);
 
                 std::vector<std::pair<float, float>> m_CellOrigin;
-                m_CellOrigin.push_back(std::make_pair<float, float>(i + m_HalfCellHeight, j + m_HalfCellHeight));
+                m_CellOrigin.push_back(std::make_pair<float, float>(i + normalizedHalfCellWidth, j + normalizedHalfCellHeight));
 
                 // right top
-                vertices.push_back(std::make_pair<float, float>(m_CellOrigin.back().first + m_HalfCellHeight + (isWallEast ? 0 : m_WallThickness), m_CellOrigin.back().second + m_HalfCellHeight));
+                vertices.push_back(std::make_pair<float, float>(m_CellOrigin.back().first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness), m_CellOrigin.back().second + normalizedHalfCellHeight));
                 colorOfVertex();
                 // right bottom
-                vertices.push_back(std::make_pair<float, float>(m_CellOrigin.back().first + m_HalfCellHeight + (isWallEast ? 0 : m_WallThickness), m_CellOrigin.back().second - m_HalfCellHeight - (isWallSouth ? 0 : m_WallThickness)));
+                vertices.push_back(std::make_pair<float, float>(m_CellOrigin.back().first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness), m_CellOrigin.back().second - normalizedHalfCellHeight - (isWallSouth ? 0 : normalizedWallThickness)));
                 colorOfVertex();
                 // left bottom
-                vertices.push_back(std::make_pair<float, float>(m_CellOrigin.back().first - m_HalfCellHeight, m_CellOrigin.back().second - m_HalfCellHeight - (isWallSouth ? 0 : m_WallThickness)));
+                vertices.push_back(std::make_pair<float, float>(m_CellOrigin.back().first - normalizedHalfCellWidth, m_CellOrigin.back().second - normalizedHalfCellHeight - (isWallSouth ? 0 : normalizedWallThickness)));
                 colorOfVertex();
                 // left top
-                vertices.push_back(std::make_pair<float, float>(m_CellOrigin.back().first - m_HalfCellHeight, m_CellOrigin.back().second + m_HalfCellHeight));
+                vertices.push_back(std::make_pair<float, float>(m_CellOrigin.back().first - normalizedHalfCellWidth, m_CellOrigin.back().second + normalizedHalfCellHeight));
                 colorOfVertex();
 
-                if (m_VisitedCellInfo.find(m_CellCount) == m_VisitedCellInfo.end())
+                if (m_VisitedCellInfo.find(currentCell) == m_VisitedCellInfo.end())
                 {
-                    m_VisitedCellInfo[m_CellCount] = 0x00;
+                    m_VisitedCellInfo[currentCell] = 0x00;
                 }
 
-                m_CellCount++;
+                currentCell++;
             }
         }
 
-        return m_CellCount;
+        return currentCell;
 	}
-
-    void ClearMazeVariables()
-    {
-        m_CellCount = 0;
-    }
 
     bool MazeCompleted()
     {
-        uint16_t cellsInOneAxis = static_cast<uint16_t>(2 / (2 * m_HalfCellHeight + m_WallThickness));
-        // Checks if last element exists
-        return m_VisitedCellCount == cellsInOneAxis * cellsInOneAxis;
+        return m_VisitedCellCount == m_CellsAcrossWidth * m_CellsAcrossHeight;
     }
 
 public:
@@ -123,12 +137,15 @@ public:
         CELL_VISITED = 0x10
     };
 
+    // These values are in pixels
+    uint16_t m_HalfCellHeight = 20;
+    uint16_t m_WallThickness = 4;
+    uint16_t totalCellHeight = 2 * m_HalfCellHeight + m_WallThickness;
+
     // can be: 0.045, 0.02, 0.01 etc
-    float m_HalfCellHeight = 0.02f;
-    float m_WallThickness = 0.01f;
+    //float m_HalfCellHeight = 0.02f;
+    //float m_WallThickness = 0.01f;
 
 	uint16_t m_MazeWidth = 0, m_MazeHeight = 0;
-	uint32_t m_CellCount = 0;
-    uint32_t m_VisitedCellCount = 0;
-
+	uint32_t m_CellsAcrossWidth = 0, m_CellsAcrossHeight = 0, m_VisitedCellCount = 0;
 };

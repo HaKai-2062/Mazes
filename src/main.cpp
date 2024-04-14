@@ -15,8 +15,8 @@ void processInput(GLFWwindow* window);
 void displayFPS(GLFWwindow* pWindow);
 
 // settings
-const uint16_t SCR_WIDTH = 1000;
-const uint16_t SCR_HEIGHT = 1000;
+const uint16_t SCR_WIDTH = 1920;
+const uint16_t SCR_HEIGHT = 1080;
 
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
@@ -57,6 +57,8 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
+    // This disables V-sync
+    glfwSwapInterval(0);
     glfwSetFramebufferSizeCallback(window, callbackResize);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -77,9 +79,7 @@ int main()
     std::vector<uint32_t> indices;
 
     Maze mazeObject(SCR_WIDTH, SCR_HEIGHT);
-    float totalCellWidth = mazeObject.m_HalfCellHeight * 2 + mazeObject.m_WallThickness;
-    uint16_t cellsInOneAxis = static_cast<uint16_t>(2 / totalCellWidth);
-    uint32_t startCoordinate = rand() % static_cast<uint32_t>(cellsInOneAxis * cellsInOneAxis - 1);
+    uint32_t startCoordinate = rand() % (mazeObject.m_CellsAcrossHeight * mazeObject.m_CellsAcrossWidth);
     std::stack<uint32_t> stack;
     stack.push(startCoordinate);
     
@@ -102,20 +102,27 @@ int main()
         // TDL: This is very inefficient and can be improved
         vertices.clear();
         indices.clear();
-        mazeObject.ClearMazeVariables();
-
+        
         if (!mazeObject.MazeCompleted())
         {
-            MazeBuilder::RecursiveBacktrack(mazeObject.m_VisitedCellInfo, stack, totalCellWidth, mazeObject.m_VisitedCellCount);
+            MazeBuilder::RecursiveBacktrack(mazeObject, stack);
         }
         else if (!mazeBuilt)
         {
             std::cout << "Maze Generated\n";
             mazeBuilt = true;
+            
+            // Stack probably holds the waypoint from start to end
+            // so we clear the stack
+            while (!stack.empty())
+            {
+               stack.pop();
+            }
+
             // Solve the maze here if needed
         }
 
-        uint32_t rectangleCount = mazeObject.DrawMaze(vertices, indices, stack.top());
+        uint32_t rectangleCount = mazeObject.DrawMaze(vertices, indices, stack);
 
         glBindVertexArray(VAO);
 
@@ -148,12 +155,6 @@ int main()
     return 0;
 }
 
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-}
-
 void displayFPS(GLFWwindow* pWindow)
 {
     static std::chrono::time_point<std::chrono::steady_clock> oldTime = std::chrono::high_resolution_clock::now();
@@ -168,6 +169,12 @@ void displayFPS(GLFWwindow* pWindow)
         glfwSetWindowTitle(pWindow, ss.str().c_str());
         fps = 0;
     }
+}
+
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
 }
 
 void callbackResize(GLFWwindow* window, int width, int height)
