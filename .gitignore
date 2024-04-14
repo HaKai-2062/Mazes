@@ -1,0 +1,7 @@
+/out
+bin/
+build/
+vendor/
+/.vs
+.idea/
+CMakeSettings.json
