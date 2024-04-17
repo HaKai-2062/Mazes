@@ -1,7 +1,15 @@
 /out
 bin/
 build/
-vendor/
 /.vs
 .idea/
 CMakeSettings.json
+
+vendor/Glad/*
+vendor/GLFW/*
+vendor/imgui-docking/*
+
+!vendor/Glad/*.txt
+!vendor/GLFW/*.txt
+!vendor/GLFW/*.md
+!vendor/imgui-docking/*.txt

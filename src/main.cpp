@@ -69,6 +69,24 @@ int main()
         return -1;
     }
 
+    // Create and bind a framebuffer object (FBO)
+    unsigned int framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    // Create a texture to render to
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+    // Check if framebuffer is complete
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "Framebuffer is not complete!" <<std::endl;
+
     Shader backgroundShader(vertexShader, fragmentShader, true);
 
     uint32_t VAO, VBO, EBO;
@@ -134,6 +152,8 @@ int main()
         displayFPS(window);
         processInput(window);
 
+        // To store inside a framebuffer
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -180,8 +200,14 @@ int main()
         glEnableVertexAttribArray(1);
 
         glDrawElements(GL_TRIANGLES, rectangleCount * 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
 
+        // Draw it to default framebuffer
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDrawElements(GL_TRIANGLES, rectangleCount * 6, GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(0);
         glfwSwapBuffers(window);
         glfwPollEvents();
 
