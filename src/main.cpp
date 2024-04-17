@@ -2,6 +2,8 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <random>
+#include <numeric>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -79,9 +81,48 @@ int main()
     std::vector<uint32_t> indices;
 
     Maze mazeObject(SCR_WIDTH, SCR_HEIGHT);
-    uint32_t startCoordinate = rand() % (mazeObject.m_CellsAcrossHeight * mazeObject.m_CellsAcrossWidth);
     std::stack<uint32_t> stack;
-    stack.push(startCoordinate);
+
+
+    uint32_t mazeArea = mazeObject.m_CellsAcrossHeight * mazeObject.m_CellsAcrossWidth;
+    // Cells indxed by the cell number
+    DisjointSet cells(mazeArea);
+
+    // Index is wallNumber, pair are cells separated by that wall
+    // Each cell has 2 walls by default in N->S and W->E
+    std::vector<std::pair<int32_t, int32_t>> walls(2 * mazeArea);
+    
+    // Add south walls first
+    for (uint32_t i = 0; i < mazeArea; i++)
+    {
+        if (i % mazeObject.m_CellsAcrossHeight == 0)
+            walls[i] = std::make_pair<int32_t, int32_t>(i, -1);
+        else
+            walls[i] = std::make_pair<int32_t, int32_t>(i, i - 1);
+    }
+
+    // Add east walls now
+    for (uint32_t i = mazeArea; i < walls.size(); i++)
+    {
+        // This makes the walls index to start from 0
+        uint32_t normalizedEastWall = i - mazeArea;
+
+        if (normalizedEastWall >= mazeArea - mazeObject.m_CellsAcrossHeight)
+            walls[i] = std::make_pair<int32_t, int32_t>(normalizedEastWall, - 1);
+        else
+            walls[i] = std::make_pair<int32_t, int32_t>(normalizedEastWall, normalizedEastWall + mazeObject.m_CellsAcrossHeight);
+    }
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    std::vector<uint32_t> wallShuffler(2 * mazeArea);
+    wallShuffler[0] = 0;
+    std::iota(wallShuffler.begin()+1, wallShuffler.end()-1, 1);
+    std::shuffle(wallShuffler.begin(), wallShuffler.end(), g);
+
+    //uint32_t startCoordinate = rand() % (mazeObject.m_CellsAcrossHeight * mazeObject.m_CellsAcrossWidth);
+    //stack.push(startCoordinate);
     
     bool mazeBuilt = false;
 
@@ -105,7 +146,7 @@ int main()
         
         if (!mazeObject.MazeCompleted())
         {
-            MazeBuilder::RecursiveBacktrack(mazeObject, stack);
+            MazeBuilder::RandomizedKruskal(mazeObject, walls, cells, wallShuffler);
         }
         else if (!mazeBuilt)
         {
@@ -114,10 +155,10 @@ int main()
             
             // Stack probably holds the waypoint from start to end
             // so we clear the stack
-            while (!stack.empty())
-            {
-               stack.pop();
-            }
+            //while (!queue.empty())
+            //{
+            //    queue.pop();
+            //}
 
             // Solve the maze here if needed
         }
