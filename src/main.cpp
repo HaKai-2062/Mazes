@@ -7,10 +7,15 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <imgui_internal.h>
 
 #include "shader.h"
 #include "maze.h"
 #include "algorithms.h"
+#include "imguiHandler.h"
 
 void callbackResize(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -46,6 +51,8 @@ int main()
 {
     srand(clock());
 
+    const char* glslVersion = "#version 130";
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -69,6 +76,8 @@ int main()
         return -1;
     }
 
+    ImGuiHandler::Init(glslVersion, window);
+
     // Create and bind a framebuffer object (FBO)
     unsigned int framebuffer;
     glGenFramebuffers(1, &framebuffer);
@@ -78,7 +87,7 @@ int main()
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
@@ -99,58 +108,62 @@ int main()
     std::vector<uint32_t> indices;
 
     Maze mazeObject(SCR_WIDTH, SCR_HEIGHT);
-    std::stack<uint32_t> stack;
-
-
-    uint32_t mazeArea = mazeObject.m_CellsAcrossHeight * mazeObject.m_CellsAcrossWidth;
-    // Cells indxed by the cell number
-    DisjointSet cells(mazeArea);
-
-    // Index is wallNumber, pair are cells separated by that wall
-    // Each cell has 2 walls by default in N->S and W->E
-    std::vector<std::pair<int32_t, int32_t>> walls(2 * mazeArea);
     
-    // Add south walls first
-    for (uint32_t i = 0; i < mazeArea; i++)
-    {
-        if (i % mazeObject.m_CellsAcrossHeight == 0)
-            walls[i] = std::make_pair<int32_t, int32_t>(i, -1);
-        else
-            walls[i] = std::make_pair<int32_t, int32_t>(i, i - 1);
-    }
+    static float f = 0.0f;
+    static int counter = 0;
+    bool showDemoWindow = false;
+    int delay = 10;
 
-    // Add east walls now
-    for (uint32_t i = mazeArea; i < walls.size(); i++)
-    {
-        // This makes the walls index to start from 0
-        uint32_t normalizedEastWall = i - mazeArea;
-
-        if (normalizedEastWall >= mazeArea - mazeObject.m_CellsAcrossHeight)
-            walls[i] = std::make_pair<int32_t, int32_t>(normalizedEastWall, - 1);
-        else
-            walls[i] = std::make_pair<int32_t, int32_t>(normalizedEastWall, normalizedEastWall + mazeObject.m_CellsAcrossHeight);
-    }
-
-    std::random_device rd;
-    std::mt19937 g(rd());
-
-    std::vector<uint32_t> wallShuffler(2 * mazeArea);
-    wallShuffler[0] = 0;
-    std::iota(wallShuffler.begin()+1, wallShuffler.end()-1, 1);
-    std::shuffle(wallShuffler.begin(), wallShuffler.end(), g);
-
-    //uint32_t startCoordinate = rand() % (mazeObject.m_CellsAcrossHeight * mazeObject.m_CellsAcrossWidth);
-    //stack.push(startCoordinate);
-    
-    bool mazeBuilt = false;
+    bool builderButton1 = false;
+    bool builderButton2 = false;
+    bool resetButton = false;
+    MazeBuilder::Algorithms builderSelected;
+    MazeBuilder* mazeBuilder = nullptr;
 
     while (!glfwWindowShouldClose(window))
     {
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-        displayFPS(window);
         processInput(window);
+
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGuiID dockSpaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_HiddenTabBar);
+
+        if (showDemoWindow)
+            ImGui::ShowDemoWindow(&showDemoWindow);
+
+        ImGuiIO& io = ImGui::GetIO();
+        ImGui::Begin("Controls");
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Checkbox("Demo Window", &showDemoWindow);
+        ImGui::SliderInt("Delay (ms)", &delay, 0, 200);
+        ImGui::NewLine();
+        ImGui::NewLine();
+
+        ImGui::Text("Maze Building Algorithm:");
+
+        if (mazeBuilder && !mazeBuilder->m_Completed && (builderButton1 || builderButton2))
+        {
+            ImGui::BeginDisabled();
+            ImGui::Button("Recursive Backtrack");
+            ImGui::Button("Kruskal");
+            ImGui::NewLine();
+            ImGui::Button("Reset Maze");
+            ImGui::EndDisabled();
+        }
+        else
+        {
+            if (!builderButton1)
+                builderButton1 = ImGui::Button("Recursive Backtrack");
+            if (!builderButton2)
+                builderButton2 = ImGui::Button("Kruskal");
+            ImGui::NewLine();
+            if (!resetButton)
+                resetButton = ImGui::Button("Reset Maze");
+        }
+
 
         // To store inside a framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -166,25 +179,52 @@ int main()
         
         if (!mazeObject.MazeCompleted())
         {
-            MazeBuilder::RandomizedKruskal(mazeObject, walls, cells, wallShuffler);
+            //mazeBuilder.RandomizedKruskal(mazeObject, walls, cells, wallShuffler);
+            if (builderButton1)
+            {
+                builderSelected = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK;
+                if (!mazeBuilder)
+                    mazeBuilder = new MazeBuilder(&mazeObject, static_cast<uint8_t>(builderSelected));
+                mazeBuilder->RecursiveBacktrack();
+            }
+                
+            if (builderButton2)
+            {
+                builderSelected = MazeBuilder::Algorithms::KRUSKAL;
+                if (!mazeBuilder)
+                    mazeBuilder = new MazeBuilder(&mazeObject, static_cast<uint8_t>(builderSelected));
+                mazeBuilder->RandomizedKruskal();
+            }
         }
-        else if (!mazeBuilt)
+        else if (mazeBuilder && !mazeBuilder->m_Completed)
         {
             std::cout << "Maze Generated\n";
-            mazeBuilt = true;
-            
-            // Stack probably holds the waypoint from start to end
-            // so we clear the stack
-            //while (!queue.empty())
-            //{
-            //    queue.pop();
-            //}
+            mazeBuilder->m_Completed = true;
+            mazeBuilder->OnCompletion();
+            builderButton1 = true;
+            builderButton2 = true;
+        }
+        else if (mazeBuilder && mazeBuilder->m_Completed && resetButton)
+        {
+            delete mazeBuilder;
+            mazeBuilder = nullptr;
 
-            // Solve the maze here if needed
+            if (mazeObject.m_VisitedCellInfo.size())
+                mazeObject.m_VisitedCellInfo.clear();
+            mazeObject.m_VisitedCellCount = 0;
+
+            builderButton1 = false;
+            builderButton2 = false;
         }
 
-        uint32_t rectangleCount = mazeObject.DrawMaze(vertices, indices, stack);
+        // Always want to keep reset button pressable after maze completion
+        resetButton = false;
 
+        uint32_t rectangleCount = 0;
+        if (!mazeBuilder)
+            rectangleCount = mazeObject.DrawMaze(vertices, indices);
+        else
+            rectangleCount = mazeObject.DrawMaze(vertices, indices, &mazeBuilder->m_Stack);
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -200,42 +240,40 @@ int main()
         glEnableVertexAttribArray(1);
 
         glDrawElements(GL_TRIANGLES, rectangleCount * 6, GL_UNSIGNED_INT, 0);
-
-        // Draw it to default framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDrawElements(GL_TRIANGLES, rectangleCount * 6, GL_UNSIGNED_INT, 0);
-
+        
         glBindVertexArray(0);
-        glfwSwapBuffers(window);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glfwPollEvents();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // For Controls menu
+        ImGui::End();
+
+        ImGuiHandler::EndFrame(dockSpaceID, &texture);
+
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            GLFWwindow* backup_current_context = glfwGetCurrentContext();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            glfwMakeContextCurrent(backup_current_context);
+        }
+        glfwSwapBuffers(window);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
     }
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
+
+    // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     
+    glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
-}
-
-void displayFPS(GLFWwindow* pWindow)
-{
-    static std::chrono::time_point<std::chrono::steady_clock> oldTime = std::chrono::high_resolution_clock::now();
-    static int fps;
-    fps++;
-
-    if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - oldTime) >= std::chrono::seconds{ 1 })
-    {
-        oldTime = std::chrono::high_resolution_clock::now();
-        std::stringstream ss;
-        ss << "Maze, " << "FPS: " << fps;
-        glfwSetWindowTitle(pWindow, ss.str().c_str());
-        fps = 0;
-    }
 }
 
 void processInput(GLFWwindow* window)
@@ -247,4 +285,7 @@ void processInput(GLFWwindow* window)
 void callbackResize(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize.x = static_cast<float>(width);
+    io.DisplaySize.y = static_cast<float>(height);
 }

@@ -6,31 +6,33 @@
 class Maze
 {
 public:
+
+    Maze() = delete;
+    Maze(Maze&) = delete;
+    Maze(Maze&&) = delete;
+
     Maze(uint16_t width, uint16_t height)
         : m_MazeWidth(width), m_MazeHeight(height) 
     {
         std::cout << "Maze Created" << std::endl;
         m_CellsAcrossWidth = static_cast<uint16_t>(floor(width / totalCellHeight));
         m_CellsAcrossHeight = static_cast<uint16_t>(floor(height / totalCellHeight));
+        m_MazeArea = m_CellsAcrossHeight * m_CellsAcrossWidth;
     }
-
-    Maze() = delete;
-    Maze(Maze&) = delete;
-    Maze(Maze&&) = delete;
 
 	~Maze()
 	{
 		std::cout << "Maze Destroyed" << std::endl;
 	}
 
-	uint32_t DrawMaze(std::vector<std::pair<float, float>>& vertices, std::vector<uint32_t>& indices, const std::stack<uint32_t>& stack)
+	uint32_t DrawMaze(std::vector<std::pair<float, float>>& vertices, std::vector<uint32_t>& indices, std::stack<uint32_t>* stack = nullptr)
 	{
         uint32_t currentCell = 0;
 
         auto colorOfVertex = [&]()
         {
             // RG, BA color of each block
-            if (!stack.empty() && currentCell == stack.top())
+            if (stack && !stack->empty() && currentCell == stack->top())
             {
                 vertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
                 vertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
@@ -147,5 +149,5 @@ public:
     //float m_WallThickness = 0.01f;
 
 	uint16_t m_MazeWidth = 0, m_MazeHeight = 0;
-	uint32_t m_CellsAcrossWidth = 0, m_CellsAcrossHeight = 0, m_VisitedCellCount = 0;
+	uint32_t m_MazeArea, m_CellsAcrossWidth = 0, m_CellsAcrossHeight = 0, m_VisitedCellCount = 0;
 };

@@ -10,6 +10,10 @@ private:
 	std::vector<uint32_t> parent;
 	std::vector<uint32_t> rank;
 public:
+	DisjointSet() = delete;
+	DisjointSet(DisjointSet&) = delete;
+	DisjointSet(DisjointSet&&) = delete;
+
 	DisjointSet(uint32_t n)
 	{
 		parent.resize(n);
@@ -55,18 +59,103 @@ public:
 	}
 };
 
-void getAllNeighbours(Maze& maze, std::vector<uint8_t>& neighbours, int64_t currentCell);
-
-namespace MazeBuilder
+class MazeBuilder
 {
-	void RecursiveBacktrack(Maze& maze, std::stack<uint32_t>& stack)
+public:
+
+	MazeBuilder() = delete;
+	MazeBuilder(MazeBuilder&) = delete;
+	MazeBuilder(MazeBuilder&&) = delete;
+
+	MazeBuilder(Maze* maze, uint8_t selectedAlgorithm)
+		: m_Maze(maze)
+	{
+		uint32_t startCoordinate = rand() % m_Maze->m_MazeArea;
+		m_SelectedAlgorithm = static_cast<Algorithms>(selectedAlgorithm);
+
+		switch (m_SelectedAlgorithm)
+		{
+		case Algorithms::RECURSIVE_BACKTRACK:
+			m_Stack.push(startCoordinate);
+			break;
+		case Algorithms::KRUSKAL:
+			m_Cells = new DisjointSet(maze->m_MazeArea);
+			walls.resize(2 * m_Maze->m_MazeArea);
+
+			// Add south walls first
+			for (uint32_t i = 0; i < m_Maze->m_MazeArea; i++)
+			{
+				if (i % m_Maze->m_CellsAcrossHeight == 0)
+					walls[i] = std::make_pair<int32_t, int32_t>(i, -1);
+				else
+					walls[i] = std::make_pair<int32_t, int32_t>(i, i - 1);
+			}
+
+			// Add east walls now
+			for (uint32_t i = m_Maze->m_MazeArea; i < walls.size(); i++)
+			{
+				// This makes the walls index to start from 0
+				uint32_t normalizedEastWall = i - m_Maze->m_MazeArea;
+
+				if (normalizedEastWall >= m_Maze->m_MazeArea - m_Maze->m_CellsAcrossHeight)
+					walls[i] = std::make_pair<int32_t, int32_t>(normalizedEastWall, -1);
+				else
+					walls[i] = std::make_pair<int32_t, int32_t>(normalizedEastWall, normalizedEastWall + m_Maze->m_CellsAcrossHeight);
+			}
+
+			std::random_device rd;
+			std::mt19937 g(rd());
+			m_WallShuffler.resize(2 * m_Maze->m_MazeArea);
+			m_WallShuffler[0] = 0;
+			std::iota(m_WallShuffler.begin() + 1, m_WallShuffler.end() - 1, 1);
+			std::shuffle(m_WallShuffler.begin(), m_WallShuffler.end(), g);
+			break;
+		}
+	}
+
+	void OnCompletion()
+	{
+		switch (m_SelectedAlgorithm)
+		{
+		case Algorithms::RECURSIVE_BACKTRACK:
+			// Stack probably holds the waypoint from start to end
+			// so we clear the stack
+			while (!m_Stack.empty())
+				m_Stack.pop();
+
+			break;
+		case Algorithms::KRUSKAL:
+			break;
+		}
+	}
+
+	void RecursiveBacktrack()
 	{
 		std::vector<uint8_t> neighbours;
 
 		// To get negative results for checks
-		int64_t currentCell = static_cast<int64_t>(stack.top());
+		int64_t currentCell = static_cast<int64_t>(m_Stack.top());
 
-		getAllNeighbours(maze, neighbours, currentCell);
+		// North
+		if (((currentCell + 1) % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell + 1] & Maze::CELL_VISITED) == 0)
+		{
+			neighbours.push_back(0);
+		}
+		// East
+		if ((currentCell + m_Maze->m_CellsAcrossHeight) < (m_Maze->m_CellsAcrossWidth * m_Maze->m_CellsAcrossHeight) && (m_Maze->m_VisitedCellInfo[currentCell + m_Maze->m_CellsAcrossHeight] & Maze::CELL_VISITED) == 0)
+		{
+			neighbours.push_back(1);
+		}
+		// South
+		if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell - 1] & Maze::CELL_VISITED) == 0)
+		{
+			neighbours.push_back(2);
+		}
+		// West
+		if (currentCell - m_Maze->m_CellsAcrossHeight >= 0 && (m_Maze->m_VisitedCellInfo[currentCell - m_Maze->m_CellsAcrossHeight] & Maze::CELL_VISITED) == 0)
+		{
+			neighbours.push_back(3);
+		}
 
 		if (!neighbours.empty())
 		{
@@ -75,94 +164,96 @@ namespace MazeBuilder
 			switch (cellToVisit)
 			{
 			case 0:
-				maze.m_VisitedCellInfo[currentCell + 1] |= Maze::CELL_VISITED | Maze::CELL_SOUTH;
-				maze.m_VisitedCellInfo[currentCell] |= Maze::CELL_NORTH;
-				stack.push(currentCell + 1);
+				m_Maze->m_VisitedCellInfo[currentCell + 1] |= Maze::CELL_VISITED | Maze::CELL_SOUTH;
+				m_Maze->m_VisitedCellInfo[currentCell] |= Maze::CELL_NORTH;
+				m_Stack.push(currentCell + 1);
 				break;
 
 			case 1:
-				maze.m_VisitedCellInfo[currentCell + maze.m_CellsAcrossHeight] |= Maze::CELL_VISITED | Maze::CELL_WEST;
-				maze.m_VisitedCellInfo[currentCell] |= Maze::CELL_EAST;
-				stack.push(currentCell + maze.m_CellsAcrossHeight);
+				m_Maze->m_VisitedCellInfo[currentCell + m_Maze->m_CellsAcrossHeight] |= Maze::CELL_VISITED | Maze::CELL_WEST;
+				m_Maze->m_VisitedCellInfo[currentCell] |= Maze::CELL_EAST;
+				m_Stack.push(currentCell + m_Maze->m_CellsAcrossHeight);
 				break;
 
 			case 2:
-				maze.m_VisitedCellInfo[currentCell - 1] |= Maze::CELL_VISITED | Maze::CELL_NORTH;
-				maze.m_VisitedCellInfo[currentCell] |= Maze::CELL_SOUTH;
-				stack.push(currentCell - 1);
+				m_Maze->m_VisitedCellInfo[currentCell - 1] |= Maze::CELL_VISITED | Maze::CELL_NORTH;
+				m_Maze->m_VisitedCellInfo[currentCell] |= Maze::CELL_SOUTH;
+				m_Stack.push(currentCell - 1);
 				break;
 
 			case 3:
-				maze.m_VisitedCellInfo[currentCell - maze.m_CellsAcrossHeight] |= Maze::CELL_VISITED | Maze::CELL_EAST;
-				maze.m_VisitedCellInfo[currentCell] |= Maze::CELL_WEST;
-				stack.push(currentCell - maze.m_CellsAcrossHeight);
+				m_Maze->m_VisitedCellInfo[currentCell - m_Maze->m_CellsAcrossHeight] |= Maze::CELL_VISITED | Maze::CELL_EAST;
+				m_Maze->m_VisitedCellInfo[currentCell] |= Maze::CELL_WEST;
+				m_Stack.push(currentCell - m_Maze->m_CellsAcrossHeight);
 				break;
 			}
 
-			maze.m_VisitedCellCount++;
+			m_Maze->m_VisitedCellCount++;
 		}
 		else
 		{
-			stack.pop();
+			m_Stack.pop();
 		}
 	}
 
-	void RandomizedKruskal(Maze& maze, std::vector<std::pair<int32_t, int32_t>>& walls, DisjointSet& cells, std::vector<uint32_t>& wallShuffler)
+	void RandomizedKruskal()
 	{
-		if (wallShuffler.size() <= 0)
-			maze.m_VisitedCellCount = maze.m_CellsAcrossWidth*maze.m_CellsAcrossHeight;
-	
-		uint32_t index = wallShuffler.back();		
-		wallShuffler.pop_back();
+		if (m_WallShuffler.size() <= 0)
+			m_Maze->m_VisitedCellCount = m_Maze->m_CellsAcrossWidth * m_Maze->m_CellsAcrossHeight;
+
+		uint32_t index = m_WallShuffler.back();
+		m_WallShuffler.pop_back();
 
 		std::pair<int32_t, int32_t> wallToPop = walls[index];
 		// dont erase from wall to keep the indexes relevant
 		// walls.erase(walls.begin()+index);
 
 		// When parent is distinct
-		if (wallToPop.second != -1 && cells.Find(static_cast<uint32_t>(wallToPop.first)) != cells.Find(static_cast<uint32_t>(wallToPop.second)))
+		if (wallToPop.second != -1 && m_Cells->Find(static_cast<uint32_t>(wallToPop.first)) != m_Cells->Find(static_cast<uint32_t>(wallToPop.second)))
 		{
-			if (index < static_cast<uint64_t>(maze.m_CellsAcrossHeight * maze.m_CellsAcrossWidth))
+			if (index < static_cast<uint64_t>(m_Maze->m_CellsAcrossHeight * m_Maze->m_CellsAcrossWidth))
 			{
-				maze.m_VisitedCellInfo[wallToPop.first] |= Maze::CELL_VISITED | Maze::CELL_SOUTH;
-				maze.m_VisitedCellInfo[wallToPop.second] |= Maze::CELL_VISITED | Maze::CELL_NORTH;
+				m_Maze->m_VisitedCellInfo[wallToPop.first] |= Maze::CELL_VISITED | Maze::CELL_SOUTH;
+				m_Maze->m_VisitedCellInfo[wallToPop.second] |= Maze::CELL_VISITED | Maze::CELL_NORTH;
 			}
-			else if (index >= static_cast<uint64_t>(maze.m_CellsAcrossHeight * maze.m_CellsAcrossWidth))
+			else if (index >= static_cast<uint64_t>(m_Maze->m_CellsAcrossHeight * m_Maze->m_CellsAcrossWidth))
 			{
-				maze.m_VisitedCellInfo[wallToPop.first] |= Maze::CELL_VISITED | Maze::CELL_EAST;
-				maze.m_VisitedCellInfo[wallToPop.second] |= Maze::CELL_VISITED | Maze::CELL_WEST;
+				m_Maze->m_VisitedCellInfo[wallToPop.first] |= Maze::CELL_VISITED | Maze::CELL_EAST;
+				m_Maze->m_VisitedCellInfo[wallToPop.second] |= Maze::CELL_VISITED | Maze::CELL_WEST;
 			}
 
-			cells.UnionSets(wallToPop.first, wallToPop.second);
+			m_Cells->UnionSets(wallToPop.first, wallToPop.second);
 		}
 	}
-}
 
-namespace MazeSolver
+public:
+	enum Algorithms
+	{
+		RECURSIVE_BACKTRACK = 0,
+		KRUSKAL
+	};
+
+	Maze* m_Maze = nullptr;
+	bool m_Completed = false;
+	Algorithms m_SelectedAlgorithm = Algorithms::RECURSIVE_BACKTRACK;
+	uint32_t m_StartCoordinate = 0;
+
+	// For RECURSIVE_BACKTRACK
+	std::stack<uint32_t> m_Stack;
+
+	// For KRUSKAL
+	// Cells indxed by the cell number
+	DisjointSet* m_Cells;
+	// Index is wallNumber, pair are cells separated by that wall
+	// Each cell has 2 walls by default in N->S and W->E
+	std::vector<std::pair<int32_t, int32_t>> walls;
+	// These represent the indexes
+	std::vector<uint32_t> m_WallShuffler;
+};
+
+/*
+class MazeSolver
 {
 
 }
-
-void getAllNeighbours(Maze& maze, std::vector<uint8_t>& neighbours, int64_t currentCell)
-{
-	// North
-	if (((currentCell + 1) % maze.m_CellsAcrossHeight) != 0 && (maze.m_VisitedCellInfo[currentCell + 1] & Maze::CELL_VISITED) == 0)
-	{
-		neighbours.push_back(0);
-	}
-	// East
-	if ((currentCell + maze.m_CellsAcrossHeight) < (maze.m_CellsAcrossWidth * maze.m_CellsAcrossHeight) && (maze.m_VisitedCellInfo[currentCell + maze.m_CellsAcrossHeight] & Maze::CELL_VISITED) == 0)
-	{
-		neighbours.push_back(1);
-	}
-	// South
-	if ((currentCell % maze.m_CellsAcrossHeight) != 0 && (maze.m_VisitedCellInfo[currentCell - 1] & Maze::CELL_VISITED) == 0)
-	{
-		neighbours.push_back(2);
-	}
-	// West
-	if (currentCell - maze.m_CellsAcrossHeight >= 0 && (maze.m_VisitedCellInfo[currentCell - maze.m_CellsAcrossHeight] & Maze::CELL_VISITED) == 0)
-	{
-		neighbours.push_back(3);
-	}
-}
+*/
