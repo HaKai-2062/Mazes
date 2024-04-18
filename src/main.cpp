@@ -19,15 +19,13 @@
 
 void callbackResize(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
-void displayFPS(GLFWwindow* pWindow);
 
 // settings
-const uint16_t SCR_WIDTH = 1280;
-const uint16_t SCR_HEIGHT = 720;
+uint16_t SCR_WIDTH = 1280;
+uint16_t SCR_HEIGHT = 720;
 
-// timing
-float deltaTime = 0.0f;	// time between current frame and last frame
-float lastFrame = 0.0f;
+bool windowResized = false;
+
 
 const char* vertexShader = "#version 330 core\n"
 "layout (location = 0) in vec2 aPos;\n"
@@ -107,7 +105,7 @@ int main()
     std::vector<std::pair<float, float>> vertices;
     std::vector<uint32_t> indices;
 
-    Maze mazeObject(SCR_WIDTH, SCR_HEIGHT);
+    Maze* mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
     
     static float f = 0.0f;
     static int counter = 0;
@@ -119,6 +117,8 @@ int main()
     bool resetButton = false;
     MazeBuilder::Algorithms builderSelected;
     MazeBuilder* mazeBuilder = nullptr;
+
+    ImVec2 getRegion = ImVec2(-1, -1);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -142,7 +142,7 @@ int main()
         ImGui::NewLine();
         ImGui::NewLine();
 
-        ImGui::Text("Maze Building Algorithm:");
+        ImGui::Text("Maze Building Algorithms");
 
         if (mazeBuilder && !mazeBuilder->m_Completed && (builderButton1 || builderButton2))
         {
@@ -177,14 +177,13 @@ int main()
         vertices.clear();
         indices.clear();
         
-        if (!mazeObject.MazeCompleted())
+        if (!mazeObject->MazeCompleted())
         {
-            //mazeBuilder.RandomizedKruskal(mazeObject, walls, cells, wallShuffler);
             if (builderButton1)
             {
                 builderSelected = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK;
                 if (!mazeBuilder)
-                    mazeBuilder = new MazeBuilder(&mazeObject, static_cast<uint8_t>(builderSelected));
+                    mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
                 mazeBuilder->RecursiveBacktrack();
             }
                 
@@ -192,8 +191,20 @@ int main()
             {
                 builderSelected = MazeBuilder::Algorithms::KRUSKAL;
                 if (!mazeBuilder)
-                    mazeBuilder = new MazeBuilder(&mazeObject, static_cast<uint8_t>(builderSelected));
+                    mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
                 mazeBuilder->RandomizedKruskal();
+            }
+
+            if (resetButton)
+            {
+                delete mazeBuilder;
+                mazeBuilder = nullptr;
+
+                delete mazeObject;
+                mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
+
+                builderButton1 = false;
+                builderButton2 = false;
             }
         }
         else if (mazeBuilder && !mazeBuilder->m_Completed)
@@ -204,14 +215,13 @@ int main()
             builderButton1 = true;
             builderButton2 = true;
         }
-        else if (mazeBuilder && mazeBuilder->m_Completed && resetButton)
+        else if (mazeBuilder && mazeBuilder->m_Completed && resetButton)        // Reset pressed after Maze is complete (if i want to add some extra condition for it)
         {
             delete mazeBuilder;
             mazeBuilder = nullptr;
 
-            if (mazeObject.m_VisitedCellInfo.size())
-                mazeObject.m_VisitedCellInfo.clear();
-            mazeObject.m_VisitedCellCount = 0;
+            delete mazeObject;
+            mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
 
             builderButton1 = false;
             builderButton2 = false;
@@ -222,9 +232,9 @@ int main()
 
         uint32_t rectangleCount = 0;
         if (!mazeBuilder)
-            rectangleCount = mazeObject.DrawMaze(vertices, indices);
+            rectangleCount = mazeObject->DrawMaze(vertices, indices);
         else
-            rectangleCount = mazeObject.DrawMaze(vertices, indices, &mazeBuilder->m_Stack);
+            rectangleCount = mazeObject->DrawMaze(vertices, indices, &mazeBuilder->m_Stack);
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -248,7 +258,36 @@ int main()
         // For Controls menu
         ImGui::End();
 
-        ImGuiHandler::EndFrame(dockSpaceID, &texture);
+        ImGuiHandler::EndFrame(dockSpaceID, &texture, getRegion, windowResized);
+
+        // Delete old framebuffer and create a new one
+        if (windowResized)
+        {
+            glDeleteFramebuffers(1, &framebuffer);
+            glDeleteTextures(1, &texture);
+
+            glGenFramebuffers(1, &framebuffer);
+            glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+            // Create a texture to render to
+            glGenTextures(1, &texture);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, getRegion.x, getRegion.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+            callbackResize(window, getRegion.x, getRegion.y);
+
+            // Rebuild the maze if we have not yet started maze generation
+            if (!mazeBuilder)
+            {
+                delete mazeObject;
+                mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
+            }
+
+            windowResized = false;
+        }
 
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
@@ -285,7 +324,7 @@ void processInput(GLFWwindow* window)
 void callbackResize(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize.x = static_cast<float>(width);
-    io.DisplaySize.y = static_cast<float>(height);
+    SCR_WIDTH = width;
+    SCR_HEIGHT = height;
+    windowResized = true;
 }

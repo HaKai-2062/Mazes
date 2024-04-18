@@ -14,7 +14,7 @@ public:
     Maze(uint16_t width, uint16_t height)
         : m_MazeWidth(width), m_MazeHeight(height) 
     {
-        std::cout << "Maze Created" << std::endl;
+        std::cout << "Maze Created [" << width << "x" << height << "]" << std::endl;
         m_CellsAcrossWidth = static_cast<uint16_t>(floor(width / totalCellHeight));
         m_CellsAcrossHeight = static_cast<uint16_t>(floor(height / totalCellHeight));
         m_MazeArea = m_CellsAcrossHeight * m_CellsAcrossWidth;

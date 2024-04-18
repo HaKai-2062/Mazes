@@ -198,8 +198,11 @@ public:
 
 	void RandomizedKruskal()
 	{
-		if (m_WallShuffler.size() <= 0)
+		if (m_WallShuffler.empty())
+		{
 			m_Maze->m_VisitedCellCount = m_Maze->m_CellsAcrossWidth * m_Maze->m_CellsAcrossHeight;
+			return;
+		}
 
 		uint32_t index = m_WallShuffler.back();
 		m_WallShuffler.pop_back();

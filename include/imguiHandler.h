@@ -54,12 +54,24 @@ namespace ImGuiHandler
             window_flags |= ImGuiWindowFlags_NoBackground;
 	}
 
-    void EndFrame(ImGuiID dockSpaceID, unsigned int* texture)
+    void EndFrame(ImGuiID dockSpaceID, unsigned int* texture, ImVec2& getRegion, bool& imguiWindowResized)
     {
         ImGui::SetNextWindowDockID(dockSpaceID, ImGuiCond_FirstUseEver);
-        ImGui::Begin("SceneWindow", false, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::Image((void*)(unsigned int)(*texture), ImGui::GetMainViewport()->Size);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
+        ImGui::Begin("SceneWindow", false, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar);
+        if (getRegion.x != ImGui::GetContentRegionAvail().x || getRegion.y != ImGui::GetContentRegionAvail().y)
+            imguiWindowResized = true;
+        getRegion = ImGui::GetContentRegionAvail();
+
+        ImGui::Image((void*)(unsigned int)(*texture), getRegion);
+        ImGui::PopStyleVar(3);
         ImGui::End();
+
+        //ImGui::Begin("test");
+        //ImGui::Text("%.1f, %.1f", getRegion.x, getRegion.y);
+        //ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
