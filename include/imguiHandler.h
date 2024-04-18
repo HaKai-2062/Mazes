@@ -1,13 +1,14 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include <imgui_internal.h>
 
 class GLFWwindow;
 
 namespace ImGuiHandler
 {
-	void Init(const char* glslVersion, GLFWwindow* window)
-	{
+    void Init(const char* glslVersion, GLFWwindow* window)
+    {
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -52,7 +53,50 @@ namespace ImGuiHandler
         // and handle the pass-thru hole, so we ask Begin() to not render a background.
         if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
             window_flags |= ImGuiWindowFlags_NoBackground;
-	}
+    }
+
+    void BeginFrame(ImGuiID& dockSpaceID, bool& showDemoWindow, int& delay, MazeBuilder*& mazeBuilder, bool& builderButton1, bool& builderButton2, bool& resetButton)
+    {
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        
+        dockSpaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_HiddenTabBar);
+        
+        if (showDemoWindow)
+            ImGui::ShowDemoWindow(&showDemoWindow);
+        
+        ImGuiIO& io = ImGui::GetIO();
+        ImGui::Begin("Controls");
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Checkbox("Demo Window", &showDemoWindow);
+        ImGui::SliderInt("Delay (ms)", &delay, 0, 200);
+        ImGui::NewLine();
+        ImGui::NewLine();
+        
+        ImGui::Text("Maze Building Algorithms");
+        
+        if (mazeBuilder && !mazeBuilder->m_Completed && (builderButton1 || builderButton2))
+        {
+            ImGui::BeginDisabled();
+            ImGui::Button("Recursive Backtrack");
+            ImGui::Button("Kruskal");
+            ImGui::NewLine();
+            ImGui::Button("Reset Maze");
+            ImGui::EndDisabled();
+        }
+        else
+        {
+            if (!builderButton1)
+                builderButton1 = ImGui::Button("Recursive Backtrack");
+            if (!builderButton2)
+                builderButton2 = ImGui::Button("Kruskal");
+            ImGui::NewLine();
+            if (!resetButton)
+                resetButton = ImGui::Button("Reset Maze");
+        }
+    }
 
     void EndFrame(ImGuiID dockSpaceID, unsigned int* texture, ImVec2& getRegion, bool& imguiWindowResized)
     {

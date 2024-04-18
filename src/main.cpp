@@ -8,9 +8,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
-#include <imgui_internal.h>
 
 #include "shader.h"
 #include "maze.h"
@@ -18,6 +15,7 @@
 #include "imguiHandler.h"
 
 void callbackResize(GLFWwindow* window, int width, int height);
+void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeBuilder::Algorithms& builderSelected, bool& builderButton1, bool& builderButton2, bool& resetButton);
 void processInput(GLFWwindow* window);
 
 // settings
@@ -115,8 +113,11 @@ int main()
     bool builderButton1 = false;
     bool builderButton2 = false;
     bool resetButton = false;
+
     MazeBuilder::Algorithms builderSelected;
     MazeBuilder* mazeBuilder = nullptr;
+    // Selected at random
+    //std::pair<uint32_t, uint32_t> route = std::make_pair<uint32_t, uint32_t>(1,2);
 
     ImVec2 getRegion = ImVec2(-1, -1);
 
@@ -124,46 +125,8 @@ int main()
     {
         processInput(window);
 
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        ImGuiID dockSpaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_HiddenTabBar);
-
-        if (showDemoWindow)
-            ImGui::ShowDemoWindow(&showDemoWindow);
-
-        ImGuiIO& io = ImGui::GetIO();
-        ImGui::Begin("Controls");
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::Checkbox("Demo Window", &showDemoWindow);
-        ImGui::SliderInt("Delay (ms)", &delay, 0, 200);
-        ImGui::NewLine();
-        ImGui::NewLine();
-
-        ImGui::Text("Maze Building Algorithms");
-
-        if (mazeBuilder && !mazeBuilder->m_Completed && (builderButton1 || builderButton2))
-        {
-            ImGui::BeginDisabled();
-            ImGui::Button("Recursive Backtrack");
-            ImGui::Button("Kruskal");
-            ImGui::NewLine();
-            ImGui::Button("Reset Maze");
-            ImGui::EndDisabled();
-        }
-        else
-        {
-            if (!builderButton1)
-                builderButton1 = ImGui::Button("Recursive Backtrack");
-            if (!builderButton2)
-                builderButton2 = ImGui::Button("Kruskal");
-            ImGui::NewLine();
-            if (!resetButton)
-                resetButton = ImGui::Button("Reset Maze");
-        }
-
+        ImGuiID dockSpaceID;
+        ImGuiHandler::BeginFrame(dockSpaceID, showDemoWindow, delay, mazeBuilder, builderButton1, builderButton2, resetButton);
 
         // To store inside a framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -173,62 +136,11 @@ int main()
         backgroundShader.use();
 
         // Clear states of the Maze per frame
-        // TDL: This is very inefficient and can be improved
+        // TDL: This is very inefficient and can be improved?
         vertices.clear();
         indices.clear();
         
-        if (!mazeObject->MazeCompleted())
-        {
-            if (builderButton1)
-            {
-                builderSelected = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK;
-                if (!mazeBuilder)
-                    mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
-                mazeBuilder->RecursiveBacktrack();
-            }
-                
-            if (builderButton2)
-            {
-                builderSelected = MazeBuilder::Algorithms::KRUSKAL;
-                if (!mazeBuilder)
-                    mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
-                mazeBuilder->RandomizedKruskal();
-            }
-
-            if (resetButton)
-            {
-                delete mazeBuilder;
-                mazeBuilder = nullptr;
-
-                delete mazeObject;
-                mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
-
-                builderButton1 = false;
-                builderButton2 = false;
-            }
-        }
-        else if (mazeBuilder && !mazeBuilder->m_Completed)
-        {
-            std::cout << "Maze Generated\n";
-            mazeBuilder->m_Completed = true;
-            mazeBuilder->OnCompletion();
-            builderButton1 = true;
-            builderButton2 = true;
-        }
-        else if (mazeBuilder && mazeBuilder->m_Completed && resetButton)        // Reset pressed after Maze is complete (if i want to add some extra condition for it)
-        {
-            delete mazeBuilder;
-            mazeBuilder = nullptr;
-
-            delete mazeObject;
-            mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
-
-            builderButton1 = false;
-            builderButton2 = false;
-        }
-
-        // Always want to keep reset button pressable after maze completion
-        resetButton = false;
+        getButtonStates(mazeObject, mazeBuilder, builderSelected, builderButton1, builderButton2, resetButton);
 
         uint32_t rectangleCount = 0;
         if (!mazeBuilder)
@@ -289,6 +201,7 @@ int main()
             windowResized = false;
         }
 
+        ImGuiIO& io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
             GLFWwindow* backup_current_context = glfwGetCurrentContext();
@@ -313,6 +226,51 @@ int main()
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
+}
+
+void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeBuilder::Algorithms& builderSelected, bool& builderButton1, bool& builderButton2, bool& resetButton)
+{
+    if (!mazeObject->MazeCompleted())
+    {
+        if (builderButton1)
+        {
+            builderSelected = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK;
+            if (!mazeBuilder)
+                mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
+            mazeBuilder->RecursiveBacktrack();
+        }
+
+        if (builderButton2)
+        {
+            builderSelected = MazeBuilder::Algorithms::KRUSKAL;
+            if (!mazeBuilder)
+                mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
+            mazeBuilder->RandomizedKruskal();
+        }
+    }
+    else if (mazeBuilder && !mazeBuilder->m_Completed)
+    {
+        std::cout << "Maze Generated\n";
+        mazeBuilder->m_Completed = true;
+        mazeBuilder->OnCompletion();
+        builderButton1 = true;
+        builderButton2 = true;
+    }
+
+    if (resetButton)
+    {
+        delete mazeBuilder;
+        mazeBuilder = nullptr;
+
+        delete mazeObject;
+        mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
+
+        builderButton1 = false;
+        builderButton2 = false;
+    }
+
+    // Always want to keep reset button pressable after maze completion
+    resetButton = false;
 }
 
 void processInput(GLFWwindow* window)
