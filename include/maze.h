@@ -11,10 +11,11 @@ public:
     Maze(Maze&) = delete;
     Maze(Maze&&) = delete;
 
-    Maze(uint16_t width, uint16_t height)
-        : m_MazeWidth(width), m_MazeHeight(height) 
+    Maze(uint16_t width, uint16_t height, uint16_t cellWidth = 10, uint16_t wallThickness = 2)
+        : m_MazeWidth(width), m_MazeHeight(height), m_HalfCellHeight(cellWidth), m_WallThickness(wallThickness)
     {
         std::cout << "Maze Created [" << width << "x" << height << "]" << std::endl;
+        totalCellHeight = 2 * m_HalfCellHeight + m_WallThickness;
         m_CellsAcrossWidth = static_cast<uint16_t>(floor(width / totalCellHeight));
         m_CellsAcrossHeight = static_cast<uint16_t>(floor(height / totalCellHeight));
         m_MazeArea = m_CellsAcrossHeight * m_CellsAcrossWidth;
@@ -148,7 +149,7 @@ public:
     // These values are in pixels
     uint16_t m_HalfCellHeight = 10;
     uint16_t m_WallThickness = 2;
-    uint16_t totalCellHeight = 2 * m_HalfCellHeight + m_WallThickness;
+    uint16_t totalCellHeight = 0;
 
     // can be: 0.045, 0.02, 0.01 etc
     //float m_HalfCellHeight = 0.02f;

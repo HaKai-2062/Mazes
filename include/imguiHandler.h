@@ -70,49 +70,95 @@ namespace ImGuiHandler
         ImGui::Begin("Controls");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::Checkbox("Demo Window", &showDemoWindow);
-        ImGui::SliderInt("Delay (ms)", &application.m_Delay, 0, 200);
         ImGui::NewLine();
         ImGui::NewLine();
         
-        ImGui::Text("Maze Building");
-        
-        if ((!application.m_MazeBuilder || !application.m_MazeBuilder->m_Completed) &&
-            !application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) && !application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Building Algorithms"))
         {
-            application.m_ButtonStates |= (ImGui::Button("Recursive Backtrack") ? Application::BUILDER_RECURSIVE_BACKTRACK : 0x00);
-            application.m_ButtonStates |= (ImGui::Button("Kruskal") ? Application::BUILDER_KRUSKAL : 0x00);
-            ImGui::NewLine();
-            if (!application.IsButtonPressed(Application::RESET))
-                application.m_ButtonStates |= (ImGui::Button("Reset Maze") ? Application::RESET : 0x00);
+            if ((!application.m_MazeBuilder || !application.m_MazeBuilder->m_Completed) &&
+                !application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) && !application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+            {
+                application.m_ButtonStates |= (ImGui::Button("Recursive Backtrack") ? Application::BUILDER_RECURSIVE_BACKTRACK : 0x00);
+                application.m_ButtonStates |= (ImGui::Button("Kruskal") ? Application::BUILDER_KRUSKAL : 0x00);
+            }
+            else if ((application.m_MazeBuilder && application.m_MazeBuilder->m_Completed) ||
+                application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+            {
+                ImGui::BeginDisabled();
+                ImGui::Button("Recursive Backtrack");
+                ImGui::Button("Kruskal");
+                ImGui::EndDisabled();
+            }
+            ImGui::TreePop();
         }
-        else if ((application.m_MazeBuilder && application.m_MazeBuilder->m_Completed) ||
-            application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+        ImGui::NewLine();
+
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Solving Algorithms"))
         {
-            ImGui::BeginDisabled();
-            ImGui::Button("Recursive Backtrack");
-            ImGui::Button("Kruskal");
-            ImGui::EndDisabled();
-            ImGui::NewLine();
-            if (!application.IsButtonPressed(Application::RESET))
-                application.m_ButtonStates |= (ImGui::Button("Reset Maze") ? Application::RESET : 0x00);
+            if (application.m_MazeBuilder && application.m_MazeBuilder->m_Completed && !application.IsButtonPressed(Application::SOLVER_DFS) && !application.IsButtonPressed(Application::SOLVER_BFS))
+            {
+                application.m_ButtonStates |= (ImGui::Button("Depth First Search") ? Application::SOLVER_DFS : 0);
+                application.m_ButtonStates |= (ImGui::Button("Breadth First Search") ? Application::SOLVER_BFS : 0);
+            }
+            else if (!application.m_MazeBuilder || !application.m_MazeBuilder->m_Completed ||
+                application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+            {
+                ImGui::BeginDisabled();
+                ImGui::Button("Depth first search");
+                ImGui::Button("Breadth first search");
+                ImGui::EndDisabled();
+            }
+            ImGui::TreePop();
+        }
+        ImGui::NewLine();
+
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Main"))
+        {
+            uint16_t lower1 = 1, higher1 = 200, higher2 = 100;
+            uint32_t lower3 = 0, higher3 = application.m_Maze->m_MazeArea-1;
+
+            uint16_t cellWidth = application.m_Maze->m_HalfCellHeight;
+            uint16_t wallWidth = application.m_Maze->m_WallThickness;
+
+            ImGui::SliderInt("Delay (ms)", &application.m_Delay, 0, 200);
+            ImGui::SliderScalar("Cell Half Width (px)", ImGuiDataType_U16, &application.m_Maze->m_HalfCellHeight, &lower1, &higher1);
+            ImGui::SliderScalar("Wall Width (px)", ImGuiDataType_U16, &application.m_Maze->m_WallThickness, &lower1, &higher2);
+            ImGui::SliderScalar("Start Cell", ImGuiDataType_U32, &application.route.first, &lower3, &higher3);
+            ImGui::SliderScalar("End Cell", ImGuiDataType_U32, &application.route.second, &lower3, &higher3);
+
+            if (cellWidth != application.m_Maze->m_HalfCellHeight || wallWidth != application.m_Maze->m_WallThickness)
+            {
+                cellWidth = application.m_Maze->m_HalfCellHeight;
+                wallWidth = application.m_Maze->m_WallThickness;
+                application.DeleteMaze();
+                application.m_Maze = new Maze(*application.m_Width, *application.m_Height, cellWidth, wallWidth);
+            }
+
+            ImGui::TreePop();
         }
 
-        ImGui::NewLine();
-        ImGui::Text("Maze Solving");
-        if (application.m_MazeBuilder && application.m_MazeBuilder->m_Completed && !application.IsButtonPressed(Application::SOLVER_DFS) && !application.IsButtonPressed(Application::SOLVER_BFS))
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Reset"))
         {
-            application.m_ButtonStates |= (ImGui::Button("Depth First Search") ? Application::SOLVER_DFS : 0);
-            application.m_ButtonStates |= (ImGui::Button("Breadth First Search") ? Application::SOLVER_BFS : 0);
+            application.m_ButtonStates |= (ImGui::Button("Path Traced") ? Application::PATH : 0x00);
+            application.m_ButtonStates |= (ImGui::Button("Maze Generated") ? Application::MAZE : 0x00);
+            ImGui::TreePop();
         }
-        else if (!application.m_MazeBuilder || !application.m_MazeBuilder->m_Completed ||
-            application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Colors"))
         {
-            ImGui::BeginDisabled();
-            ImGui::Button("Depth first search");
-            ImGui::Button("Breadth first search");
-            ImGui::EndDisabled();
+            float colors[4];
+            ImGui::ColorEdit4("Background", colors);
+            ImGui::ColorEdit4("Maze", colors);
+            ImGui::ColorEdit4("Search", colors);
+            ImGui::ColorEdit4("Path", colors);
+
+            ImGui::TreePop();
         }
-        ImGui::NewLine();
     }
 
     void EndFrame(ImGuiID dockSpaceID, unsigned int* texture, ImVec2& getRegion, bool& imguiWindowResized)

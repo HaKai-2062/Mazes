@@ -16,12 +16,7 @@ public:
 
     ~Application()
     {
-        if (m_Maze)
-            delete m_Maze;    
-        if (m_MazeBuilder)
-            delete m_MazeBuilder;
-        if (m_MazeSolver)
-            delete m_MazeSolver;
+        DeleteMaze();
     }
 
     void GetButtonStates()
@@ -54,24 +49,14 @@ public:
             m_MazeBuilder->m_Completed = true;
             m_MazeBuilder->OnCompletion();
 
-            m_ButtonStates &= ~RESET;
             m_ButtonStates &= ~SOLVER_BFS;
             m_ButtonStates &= ~SOLVER_DFS;
         }
 
-        if (IsButtonPressed(RESET))
+        if (IsButtonPressed(MAZE))
         {
-            if (m_Maze)
-                delete m_Maze;
+            DeleteMaze();
             m_Maze = new Maze(*m_Width, *m_Height);
-
-            if (m_MazeBuilder)
-                delete m_MazeBuilder;
-            m_MazeBuilder = nullptr;
-
-            if (m_MazeSolver)
-                delete m_MazeSolver;
-            m_MazeSolver = nullptr;
 
             m_ButtonStates &= ~BUILDER_RECURSIVE_BACKTRACK;
             m_ButtonStates &= ~BUILDER_KRUSKAL;
@@ -80,7 +65,7 @@ public:
         }
 
         // Always want to keep reset button pressable after maze completion
-        m_ButtonStates &= ~RESET;
+        //m_ButtonStates &= ~RESET;
 
         if (m_MazeBuilder && m_MazeBuilder->m_Completed && (IsButtonPressed(SOLVER_DFS) || IsButtonPressed(SOLVER_BFS)) && (!m_MazeSolver || !m_MazeSolver->m_Completed))
         {
@@ -130,6 +115,20 @@ public:
         return (m_ButtonStates & buttonPressed) == 0 ? false : true;
     }
 
+    void DeleteMaze()
+    {
+        if (m_Maze)
+            delete m_Maze;
+        if (m_MazeBuilder)
+            delete m_MazeBuilder;
+        if (m_MazeSolver)
+            delete m_MazeSolver;
+
+        m_Maze = nullptr;
+        m_MazeBuilder = nullptr;
+        m_MazeSolver = nullptr;
+    }
+
 public:
     uint16_t* m_Width, *m_Height = nullptr;
 
@@ -140,11 +139,12 @@ public:
     
     const enum
     {
-        RESET = 0x01,
-        BUILDER_RECURSIVE_BACKTRACK = 0x02,
-        BUILDER_KRUSKAL = 0x04,
-        SOLVER_DFS = 0x08,
-        SOLVER_BFS = 0x10
+        PATH = 0x01,
+        MAZE = 0x02,
+        BUILDER_RECURSIVE_BACKTRACK = 0x04,
+        BUILDER_KRUSKAL = 0x08,
+        SOLVER_DFS = 0x10,
+        SOLVER_BFS = 0x20
     };
 
     uint16_t m_ButtonStates = 0x00;
