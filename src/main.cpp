@@ -15,7 +15,10 @@
 #include "imguiHandler.h"
 
 void callbackResize(GLFWwindow* window, int width, int height);
-void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeBuilder::Algorithms& builderSelected, bool& builderButton1, bool& builderButton2, bool& resetButton);
+void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeSolver*& mazeSolver,
+    MazeBuilder::Algorithms& builderSelected, MazeSolver::Algorithms& solverSelected,
+    bool& builderButton1, bool& builderButton2, bool& resetButton, bool& solverButton,
+    std::pair<uint32_t, uint32_t>& route);
 void processInput(GLFWwindow* window);
 
 // settings
@@ -46,7 +49,6 @@ const char* fragmentShader = "#version 330 core\n"
 int main()
 {
     srand(clock());
-
     const char* glslVersion = "#version 130";
 
     glfwInit();
@@ -113,11 +115,29 @@ int main()
     bool builderButton1 = false;
     bool builderButton2 = false;
     bool resetButton = false;
+    bool solverButton = false;
 
     MazeBuilder::Algorithms builderSelected;
+    MazeSolver::Algorithms solverSelected;
     MazeBuilder* mazeBuilder = nullptr;
+    MazeSolver* mazeSolver = nullptr;
+     
+    // This is bad because resizing is not taken into account and wont solve most of time
+    /*
     // Selected at random
-    //std::pair<uint32_t, uint32_t> route = std::make_pair<uint32_t, uint32_t>(1,2);
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_int_distribution<> d1(0, mazeObject->m_MazeArea - 1);
+    std::uniform_int_distribution<> d2(0, mazeObject->m_MazeArea - 2);
+    std::pair<uint32_t, uint32_t> route = std::make_pair<uint32_t, uint32_t>(d1(generator), d2(generator));
+    if (route.first == route.second)
+        route.first = mazeObject->m_MazeArea - 1;
+    */
+
+    // Manually inputted atm
+    std::pair<uint32_t, uint32_t> route = std::make_pair<uint32_t, uint32_t>(0, 10);
+    if (route.first == route.second)
+        route.first = mazeObject->m_MazeArea - 1;
 
     ImVec2 getRegion = ImVec2(-1, -1);
 
@@ -126,7 +146,7 @@ int main()
         processInput(window);
 
         ImGuiID dockSpaceID;
-        ImGuiHandler::BeginFrame(dockSpaceID, showDemoWindow, delay, mazeBuilder, builderButton1, builderButton2, resetButton);
+        ImGuiHandler::BeginFrame(dockSpaceID, showDemoWindow, delay, mazeBuilder, builderButton1, builderButton2, resetButton, solverButton);
 
         // To store inside a framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -140,7 +160,7 @@ int main()
         vertices.clear();
         indices.clear();
         
-        getButtonStates(mazeObject, mazeBuilder, builderSelected, builderButton1, builderButton2, resetButton);
+        getButtonStates(mazeObject, mazeBuilder, mazeSolver, builderSelected, solverSelected, builderButton1, builderButton2, resetButton, solverButton, route);
 
         uint32_t rectangleCount = 0;
         if (!mazeBuilder)
@@ -228,14 +248,17 @@ int main()
     return 0;
 }
 
-void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeBuilder::Algorithms& builderSelected, bool& builderButton1, bool& builderButton2, bool& resetButton)
+void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeSolver*& mazeSolver,
+    MazeBuilder::Algorithms& builderSelected, MazeSolver::Algorithms& solverSelected,
+    bool& builderButton1, bool& builderButton2, bool& resetButton, bool& solverButton,
+    std::pair<uint32_t, uint32_t>& route)
 {
     if (!mazeObject->MazeCompleted())
     {
         if (builderButton1)
         {
             builderSelected = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK;
-            if (!mazeBuilder)
+            if ((builderButton1 || builderButton2) && !mazeBuilder)
                 mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
             mazeBuilder->RecursiveBacktrack();
         }
@@ -243,7 +266,7 @@ void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeBuilder::
         if (builderButton2)
         {
             builderSelected = MazeBuilder::Algorithms::KRUSKAL;
-            if (!mazeBuilder)
+            if ((builderButton1 || builderButton2) && !mazeBuilder)
                 mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
             mazeBuilder->RandomizedKruskal();
         }
@@ -267,10 +290,35 @@ void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeBuilder::
 
         builderButton1 = false;
         builderButton2 = false;
+        solverButton = false;
     }
 
     // Always want to keep reset button pressable after maze completion
     resetButton = false;
+
+    if (mazeBuilder && mazeBuilder->m_Completed)
+    {
+        if (solverButton && (!mazeSolver || !mazeSolver->m_Completed))
+        {
+            solverSelected = MazeSolver::DFS;
+            if (!mazeSolver)
+            {
+                mazeSolver = new MazeSolver(mazeObject, static_cast<uint8_t>(solverSelected), route);
+                std::cout << route.first << ',' << route.second << std::endl;
+            }
+
+            if (!mazeSolver->m_Stack.empty() && mazeSolver->m_Stack.top() == route.second)
+            {
+                mazeSolver->m_Completed = true;
+                std::cout << "Maze Solved. Goal is " << mazeSolver->m_Stack.size() << " away!" << std::endl;
+                mazeSolver->OnCompletion();
+            }
+            else
+            {
+                mazeSolver->DepthFirstSearch();
+            }
+        }
+    }
 }
 
 void processInput(GLFWwindow* window)

@@ -3,6 +3,7 @@
 #include <stack>
 #include <list>
 #include <set>
+#include <queue>
 
 class DisjointSet
 {
@@ -136,23 +137,28 @@ public:
 		// To get negative results for checks
 		int64_t currentCell = static_cast<int64_t>(m_Stack.top());
 
+		uint32_t northIndex = currentCell + 1;
+		uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
+		uint32_t southIndex = currentCell - 1;
+		int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
+
 		// North
-		if (((currentCell + 1) % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell + 1] & Maze::CELL_VISITED) == 0)
+		if ((northIndex % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[northIndex] & Maze::CELL_VISITED) == 0)
 		{
 			neighbours.push_back(0);
 		}
 		// East
-		if ((currentCell + m_Maze->m_CellsAcrossHeight) < (m_Maze->m_CellsAcrossWidth * m_Maze->m_CellsAcrossHeight) && (m_Maze->m_VisitedCellInfo[currentCell + m_Maze->m_CellsAcrossHeight] & Maze::CELL_VISITED) == 0)
+		if (eastIndex < (static_cast<uint64_t>(m_Maze->m_CellsAcrossWidth) * m_Maze->m_CellsAcrossHeight) && (m_Maze->m_VisitedCellInfo[eastIndex] & Maze::CELL_VISITED) == 0)
 		{
 			neighbours.push_back(1);
 		}
 		// South
-		if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell - 1] & Maze::CELL_VISITED) == 0)
+		if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[southIndex] & Maze::CELL_VISITED) == 0)
 		{
 			neighbours.push_back(2);
 		}
 		// West
-		if (currentCell - m_Maze->m_CellsAcrossHeight >= 0 && (m_Maze->m_VisitedCellInfo[currentCell - m_Maze->m_CellsAcrossHeight] & Maze::CELL_VISITED) == 0)
+		if (westIndex >= 0 && (m_Maze->m_VisitedCellInfo[westIndex] & Maze::CELL_VISITED) == 0)
 		{
 			neighbours.push_back(3);
 		}
@@ -164,27 +170,27 @@ public:
 			switch (cellToVisit)
 			{
 			case 0:
-				m_Maze->m_VisitedCellInfo[currentCell + 1] |= Maze::CELL_VISITED | Maze::CELL_SOUTH;
+				m_Maze->m_VisitedCellInfo[northIndex] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
 				m_Maze->m_VisitedCellInfo[currentCell] |= Maze::CELL_NORTH;
-				m_Stack.push(currentCell + 1);
+				m_Stack.push(northIndex);
 				break;
 
 			case 1:
-				m_Maze->m_VisitedCellInfo[currentCell + m_Maze->m_CellsAcrossHeight] |= Maze::CELL_VISITED | Maze::CELL_WEST;
+				m_Maze->m_VisitedCellInfo[eastIndex] |= (Maze::CELL_VISITED | Maze::CELL_WEST);
 				m_Maze->m_VisitedCellInfo[currentCell] |= Maze::CELL_EAST;
-				m_Stack.push(currentCell + m_Maze->m_CellsAcrossHeight);
+				m_Stack.push(eastIndex);
 				break;
 
 			case 2:
-				m_Maze->m_VisitedCellInfo[currentCell - 1] |= Maze::CELL_VISITED | Maze::CELL_NORTH;
+				m_Maze->m_VisitedCellInfo[southIndex] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
 				m_Maze->m_VisitedCellInfo[currentCell] |= Maze::CELL_SOUTH;
-				m_Stack.push(currentCell - 1);
+				m_Stack.push(southIndex);
 				break;
 
 			case 3:
-				m_Maze->m_VisitedCellInfo[currentCell - m_Maze->m_CellsAcrossHeight] |= Maze::CELL_VISITED | Maze::CELL_EAST;
+				m_Maze->m_VisitedCellInfo[westIndex] |= (Maze::CELL_VISITED | Maze::CELL_EAST);
 				m_Maze->m_VisitedCellInfo[currentCell] |= Maze::CELL_WEST;
-				m_Stack.push(currentCell - m_Maze->m_CellsAcrossHeight);
+				m_Stack.push(westIndex);
 				break;
 			}
 
@@ -216,13 +222,13 @@ public:
 		{
 			if (index < static_cast<uint64_t>(m_Maze->m_CellsAcrossHeight * m_Maze->m_CellsAcrossWidth))
 			{
-				m_Maze->m_VisitedCellInfo[wallToPop.first] |= Maze::CELL_VISITED | Maze::CELL_SOUTH;
-				m_Maze->m_VisitedCellInfo[wallToPop.second] |= Maze::CELL_VISITED | Maze::CELL_NORTH;
+				m_Maze->m_VisitedCellInfo[wallToPop.first] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
+				m_Maze->m_VisitedCellInfo[wallToPop.second] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
 			}
 			else if (index >= static_cast<uint64_t>(m_Maze->m_CellsAcrossHeight * m_Maze->m_CellsAcrossWidth))
 			{
-				m_Maze->m_VisitedCellInfo[wallToPop.first] |= Maze::CELL_VISITED | Maze::CELL_EAST;
-				m_Maze->m_VisitedCellInfo[wallToPop.second] |= Maze::CELL_VISITED | Maze::CELL_WEST;
+				m_Maze->m_VisitedCellInfo[wallToPop.first] |= (Maze::CELL_VISITED | Maze::CELL_EAST);
+				m_Maze->m_VisitedCellInfo[wallToPop.second] |= (Maze::CELL_VISITED | Maze::CELL_WEST);
 			}
 
 			m_Cells->UnionSets(wallToPop.first, wallToPop.second);
@@ -254,9 +260,119 @@ public:
 	std::vector<uint32_t> m_WallShuffler;
 };
 
-/*
 class MazeSolver
 {
+public:
+	MazeSolver() = delete;
+	MazeSolver(MazeSolver&) = delete;
+	MazeSolver(MazeSolver&&) = delete;
 
-}
-*/
+	MazeSolver(Maze* maze, uint8_t selectedAlgorithm, std::pair<uint32_t, uint32_t> route)
+		:m_Maze(maze), m_Route(route)
+	{
+		m_SelectedAlgorithm = static_cast<Algorithms>(selectedAlgorithm);
+
+		switch (m_SelectedAlgorithm)
+		{
+		case Algorithms::DFS:
+			m_Stack.push(m_Route.first);
+			break;
+		}
+	}
+
+	void DepthFirstSearch()
+	{
+		if (m_Stack.empty())
+		{
+			//std::cout << "Stack empty sus!\n";
+			return;
+		}
+
+		// To get negative results for checks
+ 		int64_t currentCell = static_cast<int64_t>(m_Stack.top());
+		std::vector<uint8_t> neighbours;
+
+		uint32_t northIndex = currentCell + 1;
+		uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
+		uint32_t southIndex = currentCell - 1;
+		int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
+
+		// North
+		if ((northIndex % m_Maze->m_CellsAcrossHeight) != 0 &&
+			(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0 && (m_Maze->m_VisitedCellInfo[northIndex] & Maze::CELL_SEARCHED) == 0)
+		{
+			neighbours.push_back(0);
+		}
+		// East
+		if (eastIndex < (m_Maze->m_CellsAcrossWidth * m_Maze->m_CellsAcrossHeight) &&
+			(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_EAST) != 0 && (m_Maze->m_VisitedCellInfo[eastIndex] & Maze::CELL_SEARCHED) == 0)
+		{
+			neighbours.push_back(1);
+		}
+		// South
+		if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && 
+			(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0 && (m_Maze->m_VisitedCellInfo[southIndex] & Maze::CELL_SEARCHED) == 0)
+		{
+			neighbours.push_back(2);
+		}
+		// West
+		if (westIndex >= 0 &&
+			(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_WEST) != 0 && (m_Maze->m_VisitedCellInfo[westIndex] & Maze::CELL_SEARCHED) == 0)
+		{
+			neighbours.push_back(3);
+		}
+
+		if (!neighbours.empty())
+		{
+			uint8_t cellToVisit = neighbours[rand() % neighbours.size()];
+
+			switch (cellToVisit)
+			{
+			case 0:
+				m_Maze->m_VisitedCellInfo[northIndex] |= Maze::CELL_SEARCHED;
+				m_Stack.push(northIndex);
+				break;
+
+			case 1:
+				m_Maze->m_VisitedCellInfo[eastIndex] |= Maze::CELL_SEARCHED;
+				m_Stack.push(eastIndex);
+				break;
+
+			case 2:
+				m_Maze->m_VisitedCellInfo[southIndex] |= Maze::CELL_SEARCHED;
+				m_Stack.push(southIndex);
+				break;
+
+			case 3:
+				m_Maze->m_VisitedCellInfo[westIndex] |= Maze::CELL_SEARCHED;
+				m_Stack.push(westIndex);
+				break;
+			}
+		}
+		else
+		{
+			m_Stack.pop();
+		}
+	}
+
+	void OnCompletion()
+	{
+
+	}
+
+public:
+	enum Algorithms
+	{
+		DFS = 0, BFS
+	};
+
+	Maze* m_Maze = nullptr;
+	bool m_Completed = false;
+	Algorithms m_SelectedAlgorithm = Algorithms::DFS;
+	std::pair<uint32_t, uint32_t> m_Route;
+
+	//For DFS
+	std::stack<uint32_t> m_Stack;
+	//For BFS
+	std::queue<uint32_t> m_Queue;
+};

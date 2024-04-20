@@ -55,7 +55,9 @@ namespace ImGuiHandler
             window_flags |= ImGuiWindowFlags_NoBackground;
     }
 
-    void BeginFrame(ImGuiID& dockSpaceID, bool& showDemoWindow, int& delay, MazeBuilder*& mazeBuilder, bool& builderButton1, bool& builderButton2, bool& resetButton)
+    void BeginFrame(ImGuiID& dockSpaceID, bool& showDemoWindow, int& delay, MazeBuilder*& mazeBuilder,
+        bool& builderButton1, bool& builderButton2, bool& resetButton,
+        bool& solverButton1)
     {
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -75,7 +77,7 @@ namespace ImGuiHandler
         ImGui::NewLine();
         ImGui::NewLine();
         
-        ImGui::Text("Maze Building Algorithms");
+        ImGui::Text("Maze Building");
         
         if (mazeBuilder && !mazeBuilder->m_Completed && (builderButton1 || builderButton2))
         {
@@ -84,6 +86,7 @@ namespace ImGuiHandler
             ImGui::Button("Kruskal");
             ImGui::NewLine();
             ImGui::Button("Reset Maze");
+            ImGui::NewLine();
             ImGui::EndDisabled();
         }
         else
@@ -95,6 +98,23 @@ namespace ImGuiHandler
             ImGui::NewLine();
             if (!resetButton)
                 resetButton = ImGui::Button("Reset Maze");
+        }
+
+        ImGui::Text("Maze Solving");
+        if (mazeBuilder && !mazeBuilder->m_Completed && (builderButton1 || builderButton2))
+        {
+            ImGui::BeginDisabled();
+            ImGui::Button("Depth first search");
+            ImGui::Button("Breadth first search");
+            ImGui::NewLine();
+            ImGui::EndDisabled();
+        }
+        else
+        {
+            if (!solverButton1)
+                solverButton1 = ImGui::Button("Depth first search");
+
+            ImGui::NewLine();
         }
     }
 

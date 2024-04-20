@@ -37,7 +37,12 @@ public:
                 vertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
                 vertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
             }
-            else if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && m_VisitedCellInfo[currentCell] & CELL_VISITED)
+            else if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && (m_VisitedCellInfo[currentCell] & Maze::CELL_SEARCHED))
+            {
+                vertices.push_back(std::make_pair<float, float>(0.8f, 0.8f));
+                vertices.push_back(std::make_pair<float, float>(0.8f, 1.0f));
+            }
+            else if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && (m_VisitedCellInfo[currentCell] & Maze::CELL_VISITED))
             {
                 vertices.push_back(std::make_pair<float, float>(1.0f, 1.0f));
                 vertices.push_back(std::make_pair<float, float>(1.0f, 1.0f));
@@ -75,11 +80,11 @@ public:
                 }
 
                 bool isWallEast = true;
-                if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && m_VisitedCellInfo[currentCell] & CELL_EAST)
+                if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && (m_VisitedCellInfo[currentCell] & Maze::CELL_EAST))
                     isWallEast = false;
 
                 bool isWallSouth = true;
-                if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && m_VisitedCellInfo[currentCell] & CELL_SOUTH)
+                if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && (m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH))
                     isWallSouth = false;
 
                 indices.push_back((4 * currentCell) + 0);
@@ -136,7 +141,8 @@ public:
         CELL_EAST = 0x02,
         CELL_SOUTH = 0x04,
         CELL_WEST = 0x08,
-        CELL_VISITED = 0x10
+        CELL_VISITED = 0x10,
+        CELL_SEARCHED = 0x20
     };
 
     // These values are in pixels
