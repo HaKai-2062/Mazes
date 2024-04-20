@@ -300,22 +300,23 @@ void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeSolver*& 
     {
         if (solverButton && (!mazeSolver || !mazeSolver->m_Completed))
         {
-            solverSelected = MazeSolver::DFS;
+            solverSelected = MazeSolver::BFS;
             if (!mazeSolver)
             {
                 mazeSolver = new MazeSolver(mazeObject, static_cast<uint8_t>(solverSelected), route);
                 std::cout << route.first << ',' << route.second << std::endl;
             }
 
-            if (!mazeSolver->m_Stack.empty() && mazeSolver->m_Stack.top() == route.second)
+            if (!mazeSolver->m_Queue.empty() && mazeSolver->m_Queue.front() == route.second)
             {
                 mazeSolver->m_Completed = true;
-                std::cout << "Maze Solved. Goal is " << mazeSolver->m_Stack.size() << " away!" << std::endl;
+                std::cout << "Maze Solved. Goal is " << mazeSolver->m_Queue.size() << " away!" << std::endl;
                 mazeSolver->OnCompletion();
             }
             else
             {
-                mazeSolver->DepthFirstSearch();
+                //mazeSolver->DepthFirstSearch();
+                mazeSolver->BreadthFirstSearch();
             }
         }
     }

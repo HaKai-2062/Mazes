@@ -277,6 +277,9 @@ public:
 		case Algorithms::DFS:
 			m_Stack.push(m_Route.first);
 			break;
+		case Algorithms::BFS:
+			m_Queue.push(m_Route.first);
+			break;
 		}
 	}
 
@@ -352,6 +355,83 @@ public:
 		else
 		{
 			m_Stack.pop();
+		}
+	}
+
+	void BreadthFirstSearch()
+	{
+		std::vector<uint8_t> neighbours;
+
+		if (m_Queue.empty())
+		{
+			std::cout << "empty\n";
+			return;
+		}
+
+		// To get negative results for checks
+		int64_t currentCell = static_cast<int64_t>(m_Queue.front());
+		uint32_t northIndex = currentCell + 1;
+		uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
+		uint32_t southIndex = currentCell - 1;
+		int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
+		
+		m_Queue.pop();
+
+		// North
+		if ((northIndex % m_Maze->m_CellsAcrossHeight) != 0 &&
+			(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0 && (m_Maze->m_VisitedCellInfo[northIndex] & Maze::CELL_SEARCHED) == 0)
+		{
+			neighbours.push_back(0);
+		}
+		// East
+		if (eastIndex < (m_Maze->m_CellsAcrossWidth * m_Maze->m_CellsAcrossHeight) &&
+			(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_EAST) != 0 && (m_Maze->m_VisitedCellInfo[eastIndex] & Maze::CELL_SEARCHED) == 0)
+		{
+			neighbours.push_back(1);
+		}
+		// South
+		if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 &&
+			(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0 && (m_Maze->m_VisitedCellInfo[southIndex] & Maze::CELL_SEARCHED) == 0)
+		{
+			neighbours.push_back(2);
+		}
+		// West
+		if (westIndex >= 0 &&
+			(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_WEST) != 0 && (m_Maze->m_VisitedCellInfo[westIndex] & Maze::CELL_SEARCHED) == 0)
+		{
+			neighbours.push_back(3);
+		}
+
+		if (!neighbours.empty())
+		{
+			std::shuffle(std::begin(neighbours), std::end(neighbours), std::mt19937{ std::random_device{}() });
+
+			for (uint8_t i = 0; i < neighbours.size(); i++)
+			{
+				uint8_t cellToVisit = neighbours[i];
+				switch (cellToVisit)
+				{
+				case 0:
+					m_Maze->m_VisitedCellInfo[northIndex] |= Maze::CELL_SEARCHED;
+					m_Queue.push(northIndex);
+					break;
+
+				case 1:
+					m_Maze->m_VisitedCellInfo[eastIndex] |= Maze::CELL_SEARCHED;
+					m_Queue.push(eastIndex);
+					break;
+
+				case 2:
+					m_Maze->m_VisitedCellInfo[southIndex] |= Maze::CELL_SEARCHED;
+					m_Queue.push(southIndex);
+					break;
+
+				case 3:
+					m_Maze->m_VisitedCellInfo[westIndex] |= Maze::CELL_SEARCHED;
+					m_Queue.push(westIndex);
+					break;
+				}
+			}
 		}
 	}
 
