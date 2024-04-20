@@ -12,13 +12,10 @@
 #include "shader.h"
 #include "maze.h"
 #include "algorithms.h"
+#include "application.h"
 #include "imguiHandler.h"
 
 void callbackResize(GLFWwindow* window, int width, int height);
-void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeSolver*& mazeSolver,
-    MazeBuilder::Algorithms& builderSelected, MazeSolver::Algorithms& solverSelected,
-    bool& builderButton1, bool& builderButton2, bool& resetButton, bool& solverButton,
-    std::pair<uint32_t, uint32_t>& route);
 void processInput(GLFWwindow* window);
 
 // settings
@@ -105,39 +102,11 @@ int main()
     std::vector<std::pair<float, float>> vertices;
     std::vector<uint32_t> indices;
 
-    Maze* mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
+    Application application(&SCR_WIDTH, &SCR_HEIGHT);
     
     static float f = 0.0f;
     static int counter = 0;
     bool showDemoWindow = false;
-    int delay = 10;
-
-    bool builderButton1 = false;
-    bool builderButton2 = false;
-    bool resetButton = false;
-    bool solverButton = false;
-
-    MazeBuilder::Algorithms builderSelected;
-    MazeSolver::Algorithms solverSelected;
-    MazeBuilder* mazeBuilder = nullptr;
-    MazeSolver* mazeSolver = nullptr;
-     
-    // This is bad because resizing is not taken into account and wont solve most of time
-    /*
-    // Selected at random
-    std::random_device rd;
-    std::mt19937 generator(rd());
-    std::uniform_int_distribution<> d1(0, mazeObject->m_MazeArea - 1);
-    std::uniform_int_distribution<> d2(0, mazeObject->m_MazeArea - 2);
-    std::pair<uint32_t, uint32_t> route = std::make_pair<uint32_t, uint32_t>(d1(generator), d2(generator));
-    if (route.first == route.second)
-        route.first = mazeObject->m_MazeArea - 1;
-    */
-
-    // Manually inputted atm
-    std::pair<uint32_t, uint32_t> route = std::make_pair<uint32_t, uint32_t>(0, 10);
-    if (route.first == route.second)
-        route.first = mazeObject->m_MazeArea - 1;
 
     ImVec2 getRegion = ImVec2(-1, -1);
 
@@ -146,7 +115,7 @@ int main()
         processInput(window);
 
         ImGuiID dockSpaceID;
-        ImGuiHandler::BeginFrame(dockSpaceID, showDemoWindow, delay, mazeBuilder, builderButton1, builderButton2, resetButton, solverButton);
+        ImGuiHandler::BeginFrame(dockSpaceID, showDemoWindow, application);
 
         // To store inside a framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -160,13 +129,13 @@ int main()
         vertices.clear();
         indices.clear();
         
-        getButtonStates(mazeObject, mazeBuilder, mazeSolver, builderSelected, solverSelected, builderButton1, builderButton2, resetButton, solverButton, route);
+        application.GetButtonStates();
 
         uint32_t rectangleCount = 0;
-        if (!mazeBuilder)
-            rectangleCount = mazeObject->DrawMaze(vertices, indices);
+        if (!application.m_MazeBuilder)
+            rectangleCount = application.m_Maze->DrawMaze(vertices, indices);
         else
-            rectangleCount = mazeObject->DrawMaze(vertices, indices, &mazeBuilder->m_Stack);
+            rectangleCount = application.m_Maze->DrawMaze(vertices, indices, &application.m_MazeBuilder->m_Stack);
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -212,10 +181,10 @@ int main()
             callbackResize(window, getRegion.x, getRegion.y);
 
             // Rebuild the maze if we have not yet started maze generation
-            if (!mazeBuilder)
+            if (!application.m_MazeBuilder)
             {
-                delete mazeObject;
-                mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
+                delete application.m_Maze;
+                application.m_Maze = new Maze(SCR_WIDTH, SCR_HEIGHT);
             }
 
             windowResized = false;
@@ -231,7 +200,7 @@ int main()
         }
         glfwSwapBuffers(window);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+        std::this_thread::sleep_for(std::chrono::milliseconds(application.m_Delay));
     }
 
     glDeleteVertexArrays(1, &VAO);
@@ -246,80 +215,6 @@ int main()
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
-}
-
-void getButtonStates(Maze*& mazeObject, MazeBuilder*& mazeBuilder, MazeSolver*& mazeSolver,
-    MazeBuilder::Algorithms& builderSelected, MazeSolver::Algorithms& solverSelected,
-    bool& builderButton1, bool& builderButton2, bool& resetButton, bool& solverButton,
-    std::pair<uint32_t, uint32_t>& route)
-{
-    if (!mazeObject->MazeCompleted())
-    {
-        if (builderButton1)
-        {
-            builderSelected = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK;
-            if ((builderButton1 || builderButton2) && !mazeBuilder)
-                mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
-            mazeBuilder->RecursiveBacktrack();
-        }
-
-        if (builderButton2)
-        {
-            builderSelected = MazeBuilder::Algorithms::KRUSKAL;
-            if ((builderButton1 || builderButton2) && !mazeBuilder)
-                mazeBuilder = new MazeBuilder(mazeObject, static_cast<uint8_t>(builderSelected));
-            mazeBuilder->RandomizedKruskal();
-        }
-    }
-    else if (mazeBuilder && !mazeBuilder->m_Completed)
-    {
-        std::cout << "Maze Generated\n";
-        mazeBuilder->m_Completed = true;
-        mazeBuilder->OnCompletion();
-        builderButton1 = true;
-        builderButton2 = true;
-    }
-
-    if (resetButton)
-    {
-        delete mazeBuilder;
-        mazeBuilder = nullptr;
-
-        delete mazeObject;
-        mazeObject = new Maze(SCR_WIDTH, SCR_HEIGHT);
-
-        builderButton1 = false;
-        builderButton2 = false;
-        solverButton = false;
-    }
-
-    // Always want to keep reset button pressable after maze completion
-    resetButton = false;
-
-    if (mazeBuilder && mazeBuilder->m_Completed)
-    {
-        if (solverButton && (!mazeSolver || !mazeSolver->m_Completed))
-        {
-            solverSelected = MazeSolver::BFS;
-            if (!mazeSolver)
-            {
-                mazeSolver = new MazeSolver(mazeObject, static_cast<uint8_t>(solverSelected), route);
-                std::cout << route.first << ',' << route.second << std::endl;
-            }
-
-            if (!mazeSolver->m_Queue.empty() && mazeSolver->m_Queue.front() == route.second)
-            {
-                mazeSolver->m_Completed = true;
-                std::cout << "Maze Solved. Goal is " << mazeSolver->m_Queue.size() << " away!" << std::endl;
-                mazeSolver->OnCompletion();
-            }
-            else
-            {
-                //mazeSolver->DepthFirstSearch();
-                mazeSolver->BreadthFirstSearch();
-            }
-        }
-    }
 }
 
 void processInput(GLFWwindow* window)

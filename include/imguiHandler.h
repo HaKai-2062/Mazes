@@ -3,7 +3,6 @@
 #include <backends/imgui_impl_opengl3.h>
 #include <imgui_internal.h>
 
-class GLFWwindow;
 
 namespace ImGuiHandler
 {
@@ -55,9 +54,7 @@ namespace ImGuiHandler
             window_flags |= ImGuiWindowFlags_NoBackground;
     }
 
-    void BeginFrame(ImGuiID& dockSpaceID, bool& showDemoWindow, int& delay, MazeBuilder*& mazeBuilder,
-        bool& builderButton1, bool& builderButton2, bool& resetButton,
-        bool& solverButton1)
+    void BeginFrame(ImGuiID& dockSpaceID, bool& showDemoWindow, Application& application)
     {
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -73,49 +70,49 @@ namespace ImGuiHandler
         ImGui::Begin("Controls");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::Checkbox("Demo Window", &showDemoWindow);
-        ImGui::SliderInt("Delay (ms)", &delay, 0, 200);
+        ImGui::SliderInt("Delay (ms)", &application.m_Delay, 0, 200);
         ImGui::NewLine();
         ImGui::NewLine();
         
         ImGui::Text("Maze Building");
         
-        if (mazeBuilder && !mazeBuilder->m_Completed && (builderButton1 || builderButton2))
+        if ((!application.m_MazeBuilder || !application.m_MazeBuilder->m_Completed) &&
+            !application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) && !application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+        {
+            application.m_ButtonStates |= (ImGui::Button("Recursive Backtrack") ? Application::BUILDER_RECURSIVE_BACKTRACK : 0x00);
+            application.m_ButtonStates |= (ImGui::Button("Kruskal") ? Application::BUILDER_KRUSKAL : 0x00);
+            ImGui::NewLine();
+            if (!application.IsButtonPressed(Application::RESET))
+                application.m_ButtonStates |= (ImGui::Button("Reset Maze") ? Application::RESET : 0x00);
+        }
+        else if ((application.m_MazeBuilder && application.m_MazeBuilder->m_Completed) ||
+            application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || application.IsButtonPressed(Application::BUILDER_KRUSKAL))
         {
             ImGui::BeginDisabled();
             ImGui::Button("Recursive Backtrack");
             ImGui::Button("Kruskal");
-            ImGui::NewLine();
-            ImGui::Button("Reset Maze");
-            ImGui::NewLine();
             ImGui::EndDisabled();
-        }
-        else
-        {
-            if (!builderButton1)
-                builderButton1 = ImGui::Button("Recursive Backtrack");
-            if (!builderButton2)
-                builderButton2 = ImGui::Button("Kruskal");
             ImGui::NewLine();
-            if (!resetButton)
-                resetButton = ImGui::Button("Reset Maze");
+            if (!application.IsButtonPressed(Application::RESET))
+                application.m_ButtonStates |= (ImGui::Button("Reset Maze") ? Application::RESET : 0x00);
         }
 
+        ImGui::NewLine();
         ImGui::Text("Maze Solving");
-        if (mazeBuilder && !mazeBuilder->m_Completed && (builderButton1 || builderButton2))
+        if (application.m_MazeBuilder && application.m_MazeBuilder->m_Completed && !application.IsButtonPressed(Application::SOLVER_DFS) && !application.IsButtonPressed(Application::SOLVER_BFS))
+        {
+            application.m_ButtonStates |= (ImGui::Button("Depth First Search") ? Application::SOLVER_DFS : 0);
+            application.m_ButtonStates |= (ImGui::Button("Breadth First Search") ? Application::SOLVER_BFS : 0);
+        }
+        else if (!application.m_MazeBuilder || !application.m_MazeBuilder->m_Completed ||
+            application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || application.IsButtonPressed(Application::BUILDER_KRUSKAL))
         {
             ImGui::BeginDisabled();
             ImGui::Button("Depth first search");
             ImGui::Button("Breadth first search");
-            ImGui::NewLine();
             ImGui::EndDisabled();
         }
-        else
-        {
-            if (!solverButton1)
-                solverButton1 = ImGui::Button("Depth first search");
-
-            ImGui::NewLine();
-        }
+        ImGui::NewLine();
     }
 
     void EndFrame(ImGuiID dockSpaceID, unsigned int* texture, ImVec2& getRegion, bool& imguiWindowResized)

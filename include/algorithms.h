@@ -236,7 +236,7 @@ public:
 	}
 
 public:
-	enum Algorithms
+	const enum Algorithms
 	{
 		RECURSIVE_BACKTRACK = 0,
 		KRUSKAL
@@ -252,7 +252,7 @@ public:
 
 	// For KRUSKAL
 	// Cells indxed by the cell number
-	DisjointSet* m_Cells;
+	DisjointSet* m_Cells = nullptr;
 	// Index is wallNumber, pair are cells separated by that wall
 	// Each cell has 2 walls by default in N->S and W->E
 	std::vector<std::pair<int32_t, int32_t>> walls;
@@ -441,7 +441,7 @@ public:
 	}
 
 public:
-	enum Algorithms
+	const enum Algorithms
 	{
 		DFS = 0, BFS
 	};
