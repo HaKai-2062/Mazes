@@ -65,7 +65,7 @@ public:
         }
 
         // Always want to keep reset button pressable after maze completion
-        //m_ButtonStates &= ~RESET;
+        m_ButtonStates &= ~MAZE;
 
         if (m_MazeBuilder && m_MazeBuilder->m_Completed && (IsButtonPressed(SOLVER_DFS) || IsButtonPressed(SOLVER_BFS)) && (!m_MazeSolver || !m_MazeSolver->m_Completed))
         {
