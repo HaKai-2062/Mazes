@@ -267,22 +267,23 @@ public:
 	MazeSolver(MazeSolver&) = delete;
 	MazeSolver(MazeSolver&&) = delete;
 
-	MazeSolver(Maze* maze, uint8_t selectedAlgorithm, std::pair<uint32_t, uint32_t> route)
-		:m_Maze(maze), m_Route(route)
+	MazeSolver(Maze* maze, uint8_t selectedAlgorithm, std::pair<uint32_t, uint32_t>& route)
+		:m_Maze(maze)
 	{
 		m_SelectedAlgorithm = static_cast<Algorithms>(selectedAlgorithm);
 
 		switch (m_SelectedAlgorithm)
 		{
 		case Algorithms::DFS:
-			m_Stack.push(m_Route.first);
+			m_Stack.push(route.first);
 			break;
 		case Algorithms::BFS:
-			m_Queue.push(m_Route.first);
+			m_Queue.push(route.first);
 			break;
 		}
 
 		m_Parent.resize(m_Maze->m_MazeArea);
+		m_Route = &route;
 	}
 
 	~MazeSolver()
@@ -292,12 +293,6 @@ public:
 	
 		while(!m_Queue.empty())
 			m_Queue.pop();
-
-		/*
-		for (uint32_t i = 0; m_Maze && i < m_Maze->m_VisitedCellInfo.size(); i++)
-		{
-			m_Maze->m_VisitedCellInfo[i] &= ~Maze::CELL_SEARCHED;
-		}*/
 	}
 
 	void DepthFirstSearch()
@@ -428,29 +423,37 @@ public:
 				uint8_t cellToVisit = neighbours[i];
 				switch (cellToVisit)
 				{
-				case 0:
-					m_Maze->m_VisitedCellInfo[northIndex] |= Maze::CELL_SEARCHED;
-					m_Queue.push(northIndex);
-					m_Parent[northIndex] = currentCell;
-					break;
+					case 0:
+					{
+						m_Maze->m_VisitedCellInfo[northIndex] |= Maze::CELL_SEARCHED;
+						m_Queue.push(northIndex);
+						m_Parent[northIndex] = currentCell;
+						break;
+					}
 
-				case 1:
-					m_Maze->m_VisitedCellInfo[eastIndex] |= Maze::CELL_SEARCHED;
-					m_Queue.push(eastIndex);
-					m_Parent[eastIndex] = currentCell;
-					break;
+					case 1:
+					{
+						m_Maze->m_VisitedCellInfo[eastIndex] |= Maze::CELL_SEARCHED;
+						m_Queue.push(eastIndex);
+						m_Parent[eastIndex] = currentCell;
+						break;
+					}
 
-				case 2:
-					m_Maze->m_VisitedCellInfo[southIndex] |= Maze::CELL_SEARCHED;
-					m_Queue.push(southIndex);
-					m_Parent[southIndex] = currentCell;
-					break;
+					case 2:
+					{
+						m_Maze->m_VisitedCellInfo[southIndex] |= Maze::CELL_SEARCHED;
+						m_Queue.push(southIndex);
+						m_Parent[southIndex] = currentCell;
+						break;
+					}
 
-				case 3:
-					m_Maze->m_VisitedCellInfo[westIndex] |= Maze::CELL_SEARCHED;
-					m_Queue.push(westIndex);
-					m_Parent[westIndex] = currentCell;
-					break;
+					case 3:
+					{
+						m_Maze->m_VisitedCellInfo[westIndex] |= Maze::CELL_SEARCHED;
+						m_Queue.push(westIndex);
+						m_Parent[westIndex] = currentCell;
+						break;
+					}
 				}
 			}
 		}
@@ -473,16 +476,16 @@ public:
 
 		if (m_SelectedAlgorithm == MazeSolver::Algorithms::BFS)
 		{
-			uint32_t currentCell = m_Route.second;
+			uint32_t currentCell = m_Route->second;
 
 			// Backtracking
-			while (currentCell != m_Route.first)
+			while (currentCell != m_Route->first)
 			{
 				m_Path.push_back(currentCell);
 				currentCell = m_Parent[currentCell];
 			}
 
-			m_Path.push_back(m_Route.first);
+			m_Path.push_back(m_Route->first);
 			std::reverse(m_Path.begin(), m_Path.end());
 		}
 	}
@@ -496,7 +499,8 @@ public:
 	Maze* m_Maze = nullptr;
 	bool m_Completed = false;
 	Algorithms m_SelectedAlgorithm = Algorithms::DFS;
-	std::pair<uint32_t, uint32_t> m_Route;
+	// It can't access application class
+	std::pair<uint32_t, uint32_t>* m_Route;
 
 	//For DFS
 	std::stack<uint32_t> m_Stack;

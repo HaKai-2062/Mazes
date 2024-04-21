@@ -126,8 +126,8 @@ namespace ImGuiHandler
             ImGui::SliderInt("Delay (ms)", &application.m_Delay, 0, 200);
             ImGui::SliderScalar("Cell Half Width (px)", ImGuiDataType_U16, &application.m_Maze->m_HalfCellHeight, &lower1, &higher1);
             ImGui::SliderScalar("Wall Width (px)", ImGuiDataType_U16, &application.m_Maze->m_WallThickness, &lower1, &higher2);
-            ImGui::SliderScalar("Start Cell", ImGuiDataType_U32, &application.route.first, &lower3, &higher3);
-            ImGui::SliderScalar("End Cell", ImGuiDataType_U32, &application.route.second, &lower3, &higher3);
+            ImGui::SliderScalar("Start Cell", ImGuiDataType_U32, &application.m_Route.first, &lower3, &higher3);
+            ImGui::SliderScalar("End Cell", ImGuiDataType_U32, &application.m_Route.second, &lower3, &higher3);
 
             if (cellWidth != application.m_Maze->m_HalfCellHeight || wallWidth != application.m_Maze->m_WallThickness)
             {
@@ -141,10 +141,19 @@ namespace ImGuiHandler
         }
 
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::TreeNode("Reset"))
+        if (ImGui::TreeNode("Resetting"))
         {
-            application.m_ButtonStates |= (ImGui::Button("Path Traced") ? Application::PATH : 0x00);
-            application.m_ButtonStates |= (ImGui::Button("Maze Generated") ? Application::MAZE : 0x00);
+            if (!application.m_MazeSolver || !application.m_MazeSolver->m_Completed)
+            {
+                ImGui::BeginDisabled();
+                ImGui::Button("Reset Path");
+                ImGui::EndDisabled();
+            }
+            else
+            {
+                application.m_ButtonStates |= (ImGui::Button("Reset Path") ? Application::PATH : 0x00);
+            }
+            application.m_ButtonStates |= (ImGui::Button("Reset All") ? Application::MAZE : 0x00);
             ImGui::TreePop();
         }
 

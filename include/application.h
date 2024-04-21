@@ -12,6 +12,7 @@ public:
         : m_Width(width), m_Height(height)
     {
         m_Maze = new Maze(*width, *height);
+        m_Route = std::make_pair<uint32_t, uint32_t>(rand() % (m_Maze->m_MazeArea - 1), rand() % (m_Maze->m_MazeArea - 1));
     }
 
     ~Application()
@@ -70,6 +71,11 @@ public:
 
             m_MazeSolver = nullptr;
 
+            for (uint32_t i = 0; m_Maze && i < m_Maze->m_VisitedCellInfo.size(); i++)
+            {
+                m_Maze->m_VisitedCellInfo[i] &= ~Maze::CELL_SEARCHED;
+            }
+
             m_ButtonStates &= ~SOLVER_BFS;
             m_ButtonStates &= ~SOLVER_DFS;
         }
@@ -87,36 +93,40 @@ public:
 
             if (!m_MazeSolver)
             {
-                m_MazeSolver = new MazeSolver(m_Maze, static_cast<uint8_t>(m_SolverSelected), route);
-                std::cout << route.first << ',' << route.second << std::endl;
+                m_MazeSolver = new MazeSolver(m_Maze, static_cast<uint8_t>(m_SolverSelected), m_Route);
+                std::cout << m_Route.first << ',' << m_Route.second << std::endl;
             }
 
             switch (m_SolverSelected)
             {
-            case MazeSolver::DFS:
-                if (!m_MazeSolver->m_Stack.empty() && m_MazeSolver->m_Stack.top() == route.second)
+                case MazeSolver::DFS:
                 {
-                    m_MazeSolver->m_Completed = true;
-                    std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Queue.size() << " away!" << std::endl;
-                    m_MazeSolver->OnCompletion();
+                    if (!m_MazeSolver->m_Stack.empty() && m_MazeSolver->m_Stack.top() == m_Route.second)
+                    {
+                        m_MazeSolver->m_Completed = true;
+                        std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Queue.size() << " away!" << std::endl;
+                        m_MazeSolver->OnCompletion();
+                    }
+                    else
+                    {
+                        m_MazeSolver->DepthFirstSearch();
+                    }
+                    break;
                 }
-                else
+                case MazeSolver::BFS:
                 {
-                    m_MazeSolver->DepthFirstSearch();
+                    if (!m_MazeSolver->m_Queue.empty() && m_MazeSolver->m_Queue.front() == m_Route.second)
+                    {
+                        m_MazeSolver->m_Completed = true;
+                        std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Queue.size() << " away!" << std::endl;
+                        m_MazeSolver->OnCompletion();
+                    }
+                    else
+                    {
+                        m_MazeSolver->BreadthFirstSearch();
+                    }
+                    break;
                 }
-                break;
-            case MazeSolver::BFS:
-                if (!m_MazeSolver->m_Queue.empty() && m_MazeSolver->m_Queue.front() == route.second)
-                {
-                    m_MazeSolver->m_Completed = true;
-                    std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Queue.size() << " away!" << std::endl;
-                    m_MazeSolver->OnCompletion();
-                }
-                else
-                {
-                    m_MazeSolver->BreadthFirstSearch();
-                }
-                break;
             }
         }
     }
@@ -260,5 +270,5 @@ public:
     MazeBuilder::Algorithms m_BuilderSelected = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK;
     MazeSolver::Algorithms m_SolverSelected = MazeSolver::Algorithms::DFS;
 
-    std::pair<uint32_t, uint32_t> route = std::make_pair<uint32_t, uint32_t>(0, 800);
+    std::pair<uint32_t, uint32_t> m_Route;
 };

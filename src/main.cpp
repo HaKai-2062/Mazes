@@ -131,6 +131,14 @@ int main()
         application.m_Maze->m_LineVertices.clear();
         application.m_Maze->m_LineIndices.clear();
         
+        // This ensures that our initial range of route doesnt go out of maze range or they are not equal
+        if (std::max(application.m_Route.first, application.m_Route.second) >= application.m_Maze->m_MazeArea ||
+            application.m_Route.second == application.m_Route.first)
+        {
+            application.m_Route.first = (rand() % application.m_Maze->m_MazeArea - 1);
+            application.m_Route.second = (rand() % application.m_Maze->m_MazeArea - 1);
+        }
+
         application.GetButtonStates();
 
         uint32_t rectangleCount = 0;

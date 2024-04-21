@@ -138,7 +138,7 @@ public:
 
 public:
     // This is made public to let our algorithm access it
-    // TDL: Setup appropriate getters/setters
+    // TDL: Do I really need getters/setters?
     
     // 1st int is cell number,
     // 2nd int represents the neighbours and if it has been visited or not
