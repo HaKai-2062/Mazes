@@ -281,6 +281,23 @@ public:
 			m_Queue.push(m_Route.first);
 			break;
 		}
+
+		m_Parent.resize(m_Maze->m_MazeArea);
+	}
+
+	~MazeSolver()
+	{
+		while(!m_Stack.empty())
+			m_Stack.pop();
+	
+		while(!m_Queue.empty())
+			m_Queue.pop();
+
+		/*
+		for (uint32_t i = 0; m_Maze && i < m_Maze->m_VisitedCellInfo.size(); i++)
+		{
+			m_Maze->m_VisitedCellInfo[i] &= ~Maze::CELL_SEARCHED;
+		}*/
 	}
 
 	void DepthFirstSearch()
@@ -297,7 +314,7 @@ public:
 
 		uint32_t northIndex = currentCell + 1;
 		uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
-		uint32_t southIndex = currentCell - 1;
+		int64_t southIndex = currentCell - 1;
 		int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
 
 		// North
@@ -364,7 +381,7 @@ public:
 
 		if (m_Queue.empty())
 		{
-			std::cout << "empty\n";
+			//std::cout << "Queue empty sus!\n";
 			return;
 		}
 
@@ -372,7 +389,7 @@ public:
 		int64_t currentCell = static_cast<int64_t>(m_Queue.front());
 		uint32_t northIndex = currentCell + 1;
 		uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
-		uint32_t southIndex = currentCell - 1;
+		int64_t southIndex = currentCell - 1;
 		int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
 		
 		m_Queue.pop();
@@ -404,7 +421,7 @@ public:
 
 		if (!neighbours.empty())
 		{
-			std::shuffle(std::begin(neighbours), std::end(neighbours), std::mt19937{ std::random_device{}() });
+			//std::shuffle(std::begin(neighbours), std::end(neighbours), std::mt19937{ std::random_device{}() });
 
 			for (uint8_t i = 0; i < neighbours.size(); i++)
 			{
@@ -414,21 +431,25 @@ public:
 				case 0:
 					m_Maze->m_VisitedCellInfo[northIndex] |= Maze::CELL_SEARCHED;
 					m_Queue.push(northIndex);
+					m_Parent[northIndex] = currentCell;
 					break;
 
 				case 1:
 					m_Maze->m_VisitedCellInfo[eastIndex] |= Maze::CELL_SEARCHED;
 					m_Queue.push(eastIndex);
+					m_Parent[eastIndex] = currentCell;
 					break;
 
 				case 2:
 					m_Maze->m_VisitedCellInfo[southIndex] |= Maze::CELL_SEARCHED;
 					m_Queue.push(southIndex);
+					m_Parent[southIndex] = currentCell;
 					break;
 
 				case 3:
 					m_Maze->m_VisitedCellInfo[westIndex] |= Maze::CELL_SEARCHED;
 					m_Queue.push(westIndex);
+					m_Parent[westIndex] = currentCell;
 					break;
 				}
 			}
@@ -437,7 +458,33 @@ public:
 
 	void OnCompletion()
 	{
+		if (m_SelectedAlgorithm == MazeSolver::Algorithms::DFS)
+		{
+			std::stack<uint32_t> tempStack = m_Stack;
+			int32_t size = tempStack.size();
+			m_Path.clear();
+			m_Path.resize(tempStack.size());
+			for (int32_t i = size - 1; i >= 0; i--)
+			{
+				m_Path[i] = tempStack.top();
+				tempStack.pop();
+			}
+		}
 
+		if (m_SelectedAlgorithm == MazeSolver::Algorithms::BFS)
+		{
+			uint32_t currentCell = m_Route.second;
+
+			// Backtracking
+			while (currentCell != m_Route.first)
+			{
+				m_Path.push_back(currentCell);
+				currentCell = m_Parent[currentCell];
+			}
+
+			m_Path.push_back(m_Route.first);
+			std::reverse(m_Path.begin(), m_Path.end());
+		}
 	}
 
 public:
@@ -455,4 +502,6 @@ public:
 	std::stack<uint32_t> m_Stack;
 	//For BFS
 	std::queue<uint32_t> m_Queue;
+	std::vector<uint32_t> m_Path;
+	std::vector<uint32_t> m_Parent;
 };

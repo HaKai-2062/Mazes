@@ -64,8 +64,19 @@ public:
             m_ButtonStates &= ~SOLVER_DFS;
         }
 
-        // Always want to keep reset button pressable after maze completion
+        if (IsButtonPressed(PATH) && m_MazeSolver && m_MazeSolver->m_Completed)
+        {
+            delete m_MazeSolver;
+
+            m_MazeSolver = nullptr;
+
+            m_ButtonStates &= ~SOLVER_BFS;
+            m_ButtonStates &= ~SOLVER_DFS;
+        }
+
+        // Always want to keep reset buttons pressable after maze completion
         m_ButtonStates &= ~MAZE;
+        m_ButtonStates &= ~PATH;
 
         if (m_MazeBuilder && m_MazeBuilder->m_Completed && (IsButtonPressed(SOLVER_DFS) || IsButtonPressed(SOLVER_BFS)) && (!m_MazeSolver || !m_MazeSolver->m_Completed))
         {
@@ -108,6 +119,103 @@ public:
                 break;
             }
         }
+    }
+
+    uint32_t GetPathIfFound()
+    {
+        if (!m_MazeSolver || !m_MazeSolver->m_Completed)
+            return 0;
+
+        uint32_t elementsToDraw = 0;
+        auto colorOfLineVertex = [&]()
+        {
+            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(1.0f, 0.0f));
+            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
+        };
+
+        std::vector<uint32_t> path = m_MazeSolver->m_Path;
+
+        while (!path.empty())
+        {
+            uint32_t firstCell = path.back();
+            path.pop_back();
+        
+            if (path.empty())
+                break;
+        
+            uint32_t secondCell = path.back();
+            path.pop_back();
+            path.push_back(secondCell);
+        
+            // Adjust spacing
+            bool normalDrawing = false;
+        
+            // Swap them and always draw towards East and South
+            if (secondCell < firstCell)
+            {
+                uint32_t temp = secondCell;
+                secondCell = firstCell;
+                firstCell = temp;
+                normalDrawing = true;
+            }
+        
+            bool isSouth = secondCell - firstCell == 1 ? true : false;
+            float normalizedHalfCellWidth = static_cast<float>(2 * m_Maze->m_HalfCellHeight) / (m_Maze->m_MazeWidth);
+            float normalizedHalfCellHeight = static_cast<float>(2 * m_Maze->m_HalfCellHeight) / (m_Maze->m_MazeHeight);
+            float normalizedTotalCellWidth = static_cast<float>(2 * m_Maze->m_TotalCellHeight) / (m_Maze->m_MazeWidth);
+            float normalizedTotalCellHeight = static_cast<float>(2 * m_Maze->m_TotalCellHeight) / (m_Maze->m_MazeHeight);
+            float normalizedLineThickness = static_cast<float>(2 * m_Maze->m_LineThickness) / (m_Maze->m_MazeHeight);
+        
+            std::pair<float, float> firstPoint = m_Maze->m_CellOrigin[firstCell];
+            std::pair<float, float> secondPoint = m_Maze->m_CellOrigin[secondCell];
+        
+            if (isSouth)
+            {
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 1);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 2);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
+        
+                // top left
+                m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(firstPoint.first - normalizedLineThickness, firstPoint.second + (normalDrawing ? 0 : -normalizedLineThickness)));
+                colorOfLineVertex();
+                // top right
+                m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(firstPoint.first + normalizedLineThickness, firstPoint.second + (normalDrawing ? 0 : -normalizedLineThickness)));
+                colorOfLineVertex();
+                // bottom left
+                m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(secondPoint.first - normalizedLineThickness, secondPoint.second + (normalDrawing ? normalizedLineThickness : 0)));
+                colorOfLineVertex();
+                // bottom right
+                m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(secondPoint.first + normalizedLineThickness, secondPoint.second + (normalDrawing ? normalizedLineThickness : 0)));
+                colorOfLineVertex();
+            }
+            else
+            {
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 1);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 2);
+                m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
+        
+                // left top
+                m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(firstPoint.first + (normalDrawing ? 0 : -normalizedLineThickness), firstPoint.second + normalizedLineThickness));
+                colorOfLineVertex();
+                // left bottom
+                m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(firstPoint.first + (normalDrawing ? 0 : -normalizedLineThickness), firstPoint.second - normalizedLineThickness));
+                colorOfLineVertex();
+                // right top
+                m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(secondPoint.first + (normalDrawing ? normalizedLineThickness : 0), secondPoint.second + normalizedLineThickness));
+                colorOfLineVertex();
+                // right bottom
+                m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(secondPoint.first + (normalDrawing ? normalizedLineThickness : 0), secondPoint.second - normalizedLineThickness));
+                colorOfLineVertex();
+            }
+            elementsToDraw++;
+        }
+        return elementsToDraw;
     }
 
     bool IsButtonPressed(uint16_t buttonPressed) const

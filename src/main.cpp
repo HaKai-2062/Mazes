@@ -93,14 +93,13 @@ int main()
 
     Shader backgroundShader(vertexShader, fragmentShader, true);
 
-    uint32_t VAO, VBO, EBO;
+    uint32_t VAO, VBO, EBO, VBOLine, EBOLine;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &VBOLine);
     glGenBuffers(1, &EBO);
+    glGenBuffers(1, &EBOLine);
     glBindVertexArray(0);
-
-    std::vector<std::pair<float, float>> vertices;
-    std::vector<uint32_t> indices;
 
     Application application(&SCR_WIDTH, &SCR_HEIGHT);
     
@@ -126,23 +125,30 @@ int main()
 
         // Clear states of the Maze per frame
         // TDL: This is very inefficient and can be improved?
-        vertices.clear();
-        indices.clear();
+        application.m_Maze->m_Vertices.clear();
+        application.m_Maze->m_Indices.clear();
+        application.m_Maze->m_CellOrigin.clear();
+        application.m_Maze->m_LineVertices.clear();
+        application.m_Maze->m_LineIndices.clear();
         
         application.GetButtonStates();
 
         uint32_t rectangleCount = 0;
         if (!application.m_MazeBuilder)
-            rectangleCount = application.m_Maze->DrawMaze(vertices, indices);
+            rectangleCount = application.m_Maze->DrawMaze();
         else
-            rectangleCount = application.m_Maze->DrawMaze(vertices, indices, &application.m_MazeBuilder->m_Stack);
+            rectangleCount = application.m_Maze->DrawMaze(&application.m_MazeBuilder->m_Stack);
+
+        uint32_t rectangleCount2 = 0;
+        rectangleCount2 = application.GetPathIfFound();
+
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float) * 2, vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, application.m_Maze->m_Vertices.size() * sizeof(float) * 2, application.m_Maze->m_Vertices.data(), GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, application.m_Maze->m_Indices.size() * sizeof(uint32_t), application.m_Maze->m_Indices.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
@@ -151,7 +157,24 @@ int main()
         glEnableVertexAttribArray(1);
 
         glDrawElements(GL_TRIANGLES, rectangleCount * 6, GL_UNSIGNED_INT, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBOLine);
+        glBufferData(GL_ARRAY_BUFFER, application.m_Maze->m_LineVertices.size() * sizeof(float) * 2, application.m_Maze->m_LineVertices.data(), GL_STATIC_DRAW);
         
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOLine);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, application.m_Maze->m_LineIndices.size() * sizeof(uint32_t), application.m_Maze->m_LineIndices.data(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        glDrawElements(GL_TRIANGLES, rectangleCount2 * 6, GL_UNSIGNED_INT, 0);
+
         glBindVertexArray(0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glfwPollEvents();
