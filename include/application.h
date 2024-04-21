@@ -254,7 +254,10 @@ public:
     MazeBuilder* m_MazeBuilder = nullptr;
     MazeSolver* m_MazeSolver = nullptr;
 	int m_Delay = 10;
-    
+
+    bool m_ColorPathAnimation1 = true;
+    float m_ColorPath[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+
     const enum
     {
         PATH = 0x01,

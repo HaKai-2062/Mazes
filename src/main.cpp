@@ -25,7 +25,7 @@ uint16_t SCR_HEIGHT = 720;
 bool windowResized = false;
 
 
-const char* vertexShader = "#version 330 core\n"
+const char* mazeVertexShader = "#version 330 core\n"
 "layout (location = 0) in vec2 aPos;\n"
 "layout(location = 1) in vec4 aColor; \n"
 "out vec4 ourColor;\n"
@@ -35,12 +35,38 @@ const char* vertexShader = "#version 330 core\n"
 "    ourColor = aColor;\n"
 "}\n";
 
-const char* fragmentShader = "#version 330 core\n"
+const char* mazeFragmentShader = "#version 330 core\n"
 "out vec4 FragColor;\n"
 "in vec4 ourColor;\n"
 "void main()\n"
 "{\n"
 "   FragColor = ourColor;\n"
+"}\n";
+
+
+const char* pathVertexShader = "#version 330 core\n"
+"layout (location = 0) in vec2 aPos;\n"
+"layout(location = 1) in vec4 aColor; \n"
+"out vec4 ourColor;\n"
+"void main()\n"
+"{\n"
+"    gl_Position = vec4(aPos.xy, 1.0, 1.0);\n"
+"    ourColor = aColor;\n"
+"}\n";
+
+
+const char* pathFragmentShader = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"in vec4 ourColor;\n"
+"uniform bool overrideColor;\n"
+"void main()\n"
+"{\n"
+"   if (!overrideColor)\n"
+"   {\n"
+"       FragColor = ourColor;\n"
+"       return;\n"
+"   }\n"
+"   FragColor = vec4(0.5);\n"
 "}\n";
 
 int main()
@@ -91,7 +117,8 @@ int main()
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "Framebuffer is not complete!" <<std::endl;
 
-    Shader backgroundShader(vertexShader, fragmentShader, true);
+    Shader mazeShader(mazeVertexShader, mazeFragmentShader, true);
+    Shader pathShader(pathVertexShader, pathFragmentShader, true);
 
     uint32_t VAO, VBO, EBO, VBOLine, EBOLine;
     glGenVertexArrays(1, &VAO);
@@ -121,7 +148,7 @@ int main()
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        backgroundShader.use();
+        mazeShader.use();
 
         // Clear states of the Maze per frame
         // TDL: This is very inefficient and can be improved?
@@ -165,6 +192,13 @@ int main()
         glEnableVertexAttribArray(1);
 
         glDrawElements(GL_TRIANGLES, rectangleCount * 6, GL_UNSIGNED_INT, 0);
+
+        pathShader.use();
+
+        if (application.m_ColorPathAnimation1)
+            pathShader.setBool("overrideColor", true);
+        else
+            pathShader.setBool("overrideColor", false);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

@@ -45,23 +45,23 @@ public:
             // RG, BA color of each block
             if (stack && !stack->empty() && currentCell == stack->top())
             {
-                m_Vertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
-                m_Vertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
+                m_Vertices.push_back(std::make_pair(m_ColorStackTop[0], m_ColorStackTop[1]));
+                m_Vertices.push_back(std::make_pair(m_ColorStackTop[2], m_ColorStackTop[3]));
             }
             else if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && (m_VisitedCellInfo[currentCell] & Maze::CELL_SEARCHED))
             {
-                m_Vertices.push_back(std::make_pair<float, float>(0.8f, 0.8f));
-                m_Vertices.push_back(std::make_pair<float, float>(0.8f, 1.0f));
+                m_Vertices.push_back(std::make_pair(m_ColorSearched[0], m_ColorSearched[1]));
+                m_Vertices.push_back(std::make_pair(m_ColorSearched[2], m_ColorSearched[3]));
             }
             else if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && (m_VisitedCellInfo[currentCell] & Maze::CELL_VISITED))
             {
-                m_Vertices.push_back(std::make_pair<float, float>(1.0f, 1.0f));
-                m_Vertices.push_back(std::make_pair<float, float>(1.0f, 1.0f));
+                m_Vertices.push_back(std::make_pair(m_ColorMaze[0], m_ColorMaze[1]));
+                m_Vertices.push_back(std::make_pair(m_ColorMaze[2], m_ColorMaze[3]));
             }
             else
             {
-                m_Vertices.push_back(std::make_pair<float, float>(1.0f, 0.5f));
-                m_Vertices.push_back(std::make_pair<float, float>(0.2f, 1.0f));
+                m_Vertices.push_back(std::make_pair(m_ColorBackground[0], m_ColorBackground[1]));
+                m_Vertices.push_back(std::make_pair(m_ColorBackground[2], m_ColorStackTop[3]));
             }
         };
 
@@ -154,6 +154,12 @@ public:
         CELL_SEARCHED = 0x20
     };
 
+
+    float m_ColorMaze[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    float m_ColorStackTop[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
+    float m_ColorSearched[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    float m_ColorBackground[4] = { 1.0f, 0.5f, 0.2f, 1.0f };
+    
     // These values are in pixels
     uint16_t m_HalfCellHeight = 10;
     uint16_t m_WallThickness = 2;

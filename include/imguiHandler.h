@@ -160,11 +160,14 @@ namespace ImGuiHandler
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Colors"))
         {
-            float colors[4];
-            ImGui::ColorEdit4("Background", colors);
-            ImGui::ColorEdit4("Maze", colors);
-            ImGui::ColorEdit4("Search", colors);
-            ImGui::ColorEdit4("Path", colors);
+            ImGui::ColorEdit4("Maze", application.m_Maze->m_ColorMaze);
+            ImGui::ColorEdit4("Path", application.m_ColorPath);
+            ImGui::ColorEdit4("Search", application.m_Maze->m_ColorSearched);
+            ImGui::ColorEdit4("Stack Top", application.m_Maze->m_ColorStackTop);
+            ImGui::ColorEdit4("Background", application.m_Maze->m_ColorBackground);
+            ImGui::NewLine();
+            ImGui::TextWrapped("The following must be unchecked to make the custom Path color appear");
+            ImGui::Checkbox("Animation 1", &application.m_ColorPathAnimation1);
 
             ImGui::TreePop();
         }
