@@ -166,8 +166,7 @@ namespace ImGuiHandler
             ImGui::ColorEdit4("Stack Top", application.m_Maze->m_ColorStackTop);
             ImGui::ColorEdit4("Background", application.m_Maze->m_ColorBackground);
             ImGui::NewLine();
-            ImGui::TextWrapped("The following must be unchecked to make the custom Path color appear");
-            ImGui::Checkbox("Animation 1", &application.m_ColorPathAnimation1);
+            ImGui::Checkbox("Path Animation", &application.m_ColorPathAnimation1);
 
             ImGui::TreePop();
         }

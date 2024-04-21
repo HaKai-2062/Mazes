@@ -154,7 +154,6 @@ public:
         CELL_SEARCHED = 0x20
     };
 
-
     float m_ColorMaze[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
     float m_ColorStackTop[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
     float m_ColorSearched[4] = { 0.8f, 0.8f, 0.8f, 1.0f };

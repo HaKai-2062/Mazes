@@ -139,8 +139,8 @@ public:
         uint32_t elementsToDraw = 0;
         auto colorOfLineVertex = [&]()
         {
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(1.0f, 0.0f));
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(0.0f, 1.0f));
+            m_Maze->m_LineVertices.push_back(std::make_pair(m_ColorPath[0], m_ColorPath[1]));
+            m_Maze->m_LineVertices.push_back(std::make_pair(m_ColorPath[2], m_ColorPath[3]));
         };
 
         std::vector<uint32_t> path = m_MazeSolver->m_Path;
