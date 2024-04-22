@@ -118,16 +118,17 @@ namespace ImGuiHandler
         if (ImGui::TreeNode("Main"))
         {
             uint16_t lower1 = 1, higher1 = 200, higher2 = 100;
-            uint32_t lower3 = 0, higher3 = application.m_Maze->m_MazeArea-1;
+            uint32_t lower3 = 0, higher3 = application.m_Maze->m_HalfCellHeight, higher4 = application.m_Maze->m_MazeArea-1;
 
             uint16_t cellWidth = application.m_Maze->m_HalfCellHeight;
             uint16_t wallWidth = application.m_Maze->m_WallThickness;
 
             ImGui::SliderInt("Delay (ms)", &application.m_Delay, 0, 200);
-            ImGui::SliderScalar("Cell Half Width (px)", ImGuiDataType_U16, &application.m_Maze->m_HalfCellHeight, &lower1, &higher1);
-            ImGui::SliderScalar("Wall Width (px)", ImGuiDataType_U16, &application.m_Maze->m_WallThickness, &lower1, &higher2);
-            ImGui::SliderScalar("Start Cell", ImGuiDataType_U32, &application.m_Route.first, &lower3, &higher3);
-            ImGui::SliderScalar("End Cell", ImGuiDataType_U32, &application.m_Route.second, &lower3, &higher3);
+            ImGui::SliderScalar("Cell Width", ImGuiDataType_U16, &application.m_Maze->m_HalfCellHeight, &lower1, &higher1);
+            ImGui::SliderScalar("Wall Width", ImGuiDataType_U16, &application.m_Maze->m_WallThickness, &lower1, &higher2);
+            ImGui::SliderScalar("Path Width", ImGuiDataType_U16, &application.m_Maze->m_LineThickness, &lower1, &higher3);
+            ImGui::SliderScalar("Start Cell", ImGuiDataType_U32, &application.m_Route.first, &lower3, &higher4);
+            ImGui::SliderScalar("End Cell", ImGuiDataType_U32, &application.m_Route.second, &lower3, &higher4);
 
             if (cellWidth != application.m_Maze->m_HalfCellHeight || wallWidth != application.m_Maze->m_WallThickness)
             {
@@ -161,12 +162,15 @@ namespace ImGuiHandler
         if (ImGui::TreeNode("Colors"))
         {
             ImGui::ColorEdit4("Maze", application.m_Maze->m_ColorMaze);
+            ImGui::ColorEdit4("Start", application.m_Maze->m_ColorStart);
+            ImGui::ColorEdit4("End", application.m_Maze->m_ColorEnd);
             ImGui::ColorEdit4("Path", application.m_ColorPath);
             ImGui::ColorEdit4("Search", application.m_Maze->m_ColorSearched);
             ImGui::ColorEdit4("Stack Top", application.m_Maze->m_ColorStackTop);
             ImGui::ColorEdit4("Background", application.m_Maze->m_ColorBackground);
             ImGui::NewLine();
-            ImGui::Checkbox("Path Animation", &application.m_ColorPathAnimation1);
+            ImGui::Checkbox("Path Animation", &application.m_PathAnimation);
+            ImGui::SliderFloat("Color Cycle", &application.m_PathSpeed, 0, 0.2);
 
             ImGui::TreePop();
         }
@@ -186,10 +190,6 @@ namespace ImGuiHandler
         ImGui::Image((void*)(unsigned int)(*texture), getRegion);
         ImGui::PopStyleVar(3);
         ImGui::End();
-
-        //ImGui::Begin("test");
-        //ImGui::Text("%.1f, %.1f", getRegion.x, getRegion.y);
-        //ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

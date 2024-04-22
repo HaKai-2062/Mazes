@@ -104,7 +104,7 @@ public:
                     if (!m_MazeSolver->m_Stack.empty() && m_MazeSolver->m_Stack.top() == m_Route.second)
                     {
                         m_MazeSolver->m_Completed = true;
-                        std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Queue.size() << " away!" << std::endl;
+                        std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Path.size() << " away!" << std::endl;
                         m_MazeSolver->OnCompletion();
                     }
                     else
@@ -118,7 +118,7 @@ public:
                     if (!m_MazeSolver->m_Queue.empty() && m_MazeSolver->m_Queue.front() == m_Route.second)
                     {
                         m_MazeSolver->m_Completed = true;
-                        std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Queue.size() << " away!" << std::endl;
+                        std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Path.size() << " away!" << std::endl;
                         m_MazeSolver->OnCompletion();
                     }
                     else
@@ -255,7 +255,8 @@ public:
     MazeSolver* m_MazeSolver = nullptr;
 	int m_Delay = 10;
 
-    bool m_ColorPathAnimation1 = true;
+    bool m_PathAnimation = true;
+    float m_PathSpeed = 0.05;
     float m_ColorPath[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
 
     const enum

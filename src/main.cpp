@@ -66,7 +66,8 @@ const char* pathFragmentShader = "//Original Shader Source: https://www.shaderto
 "out vec4 FragColor;\n"
 "in vec4 ourColor;\n"
 "in vec2 ourPos;\n"
-"uniform bool overrideColor;\n"
+"uniform bool enableAnimation;\n"
+"uniform float colorCycle;\n"
 "uniform float time;\n"
 "float rand(vec2 co) {\n"
 "    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);\n"
@@ -106,19 +107,36 @@ const char* pathFragmentShader = "//Original Shader Source: https://www.shaderto
 ""
 "float edge(in vec2 v, float edge0, float edge1) {\n"
 "    return 1.0 - smoothstep(edge0, edge1, abs(fbm(v) - 0.5));\n"
-"}"
+"}\n"
 ""
-""
+"// Function to convert HSV to RGB\n"
+"vec3 hsv2rgb(vec3 c) {\n"
+"    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);\n"
+"    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);\n"
+"    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);\n"
+"}\n"
 "void main()\n"
 "{\n"
-"   if (!overrideColor)\n"
+"   if (!enableAnimation)\n"
 "   {\n"
 "       FragColor = ourColor;\n"
 "       return;\n"
 "   }\n"
 ""
-"   vec3 redMeat = ourColor.xyz;\n"
-"   vec3 fattyMeat = ourColor.xyz;\n"
+"   // Calculate hue value based on time\n"
+"   float hue = mod(time * colorCycle, 1.0);\n"
+""
+"   // Convert hue to RGB color\n"
+"   vec3 colorToShow = hsv2rgb(vec3(hue, 1.0, 1.0));\n"
+""
+"   if (hue == 0.0f)\n"
+"   {\n"
+"       colorToShow = ourColor.xyz;\n"
+"   }\n"
+""
+""
+"   vec3 redMeat = colorToShow;\n"
+"   vec3 fattyMeat = colorToShow;\n"
 ""
 "   // Animation - pulse using a sine function\n"
 "   float pulse = 0.06 * sin(time * 1.5);  // Values between -0.01 and 0.01\n"
@@ -255,7 +273,7 @@ int main()
         if (!application.m_MazeBuilder)
             rectangleCount = application.m_Maze->DrawMaze();
         else
-            rectangleCount = application.m_Maze->DrawMaze(&application.m_MazeBuilder->m_Stack);
+            rectangleCount = application.m_Maze->DrawMaze(&application.m_MazeBuilder->m_Stack, &application.m_Route);
 
         uint32_t rectangleCount2 = 0;
         rectangleCount2 = application.GetPathIfFound();
@@ -278,10 +296,12 @@ int main()
 
         pathShader.use();
 
-        if (application.m_ColorPathAnimation1)
-            pathShader.setBool("overrideColor", true);
+        if (application.m_PathAnimation)
+            pathShader.setBool("enableAnimation", true);
         else
-            pathShader.setBool("overrideColor", false);
+            pathShader.setBool("enableAnimation", false);
+
+        pathShader.setFloat("colorCycle", application.m_PathSpeed);
 
         if (localAccumulator > shaderDelay)
         {
