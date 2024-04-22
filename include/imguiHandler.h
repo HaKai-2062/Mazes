@@ -168,10 +168,14 @@ namespace ImGuiHandler
             ImGui::ColorEdit4("Search", application.m_Maze->m_ColorSearched);
             ImGui::ColorEdit4("Stack Top", application.m_Maze->m_ColorStackTop);
             ImGui::ColorEdit4("Background", application.m_Maze->m_ColorBackground);
-            ImGui::NewLine();
+            ImGui::TreePop();
+        }
+
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::TreeNode("Animation"))
+        {
             ImGui::Checkbox("Path Animation", &application.m_PathAnimation);
             ImGui::SliderFloat("Color Cycle", &application.m_PathSpeed, 0, 0.2);
-
             ImGui::TreePop();
         }
     }
