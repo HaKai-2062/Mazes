@@ -308,6 +308,13 @@ void MazeBuilder::RandomizedPrims()
 	}
 }
 
+void MazeBuilder::Wilson()
+{
+	std::cout << "test\n";
+
+	m_Maze->m_VisitedCellCount = m_Maze->m_CellsAcrossWidth * m_Maze->m_CellsAcrossHeight;
+}
+
 DisjointSet::DisjointSet(uint32_t n)
 {
 	parent.resize(n);

@@ -17,18 +17,21 @@ public:
 	void RecursiveBacktrack();
 	void RandomizedKruskal();
 	void RandomizedPrims();
+	void Wilson();
 
 public:
 	const enum Algorithms
 	{
-		RECURSIVE_BACKTRACK = 0,
+		NONE = 0,
+		RECURSIVE_BACKTRACK,
 		KRUSKAL,
-		PRIMS
+		PRIMS,
+		WILSON
 	};
 
 	Maze* m_Maze = nullptr;
 	bool m_Completed = false;
-	Algorithms m_SelectedAlgorithm = Algorithms::RECURSIVE_BACKTRACK;
+	Algorithms m_SelectedAlgorithm = Algorithms::NONE;
 	uint32_t m_StartCoordinate = 0;
 
 	// For RECURSIVE_BACKTRACK

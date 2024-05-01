@@ -37,14 +37,15 @@ public:
         BUILDER_RECURSIVE_BACKTRACK = 0x04,
         BUILDER_KRUSKAL = 0x08,
         BUILDER_PRIMS = 0x10,
-        SOLVER_DFS = 0x20,
-        SOLVER_BFS = 0x40
+        BUILDER_WILSON = 0x20,
+        SOLVER_DFS = 0x40,
+        SOLVER_BFS = 0x80
     };
 
     uint16_t m_ButtonStates = 0x00;
     
-    MazeBuilder::Algorithms m_BuilderSelected = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK;
-    MazeSolver::Algorithms m_SolverSelected = MazeSolver::Algorithms::DFS;
+    MazeBuilder::Algorithms m_BuilderSelected = MazeBuilder::Algorithms::NONE;
+    MazeSolver::Algorithms m_SolverSelected = MazeSolver::Algorithms::NONE;
 
     std::pair<uint32_t, uint32_t> m_Route;
 };

@@ -20,12 +20,14 @@ public:
 public:
 	const enum Algorithms
 	{
-		DFS = 0, BFS
+		NONE = 0,
+		DFS,
+		BFS
 	};
 
 	Maze* m_Maze = nullptr;
 	bool m_Completed = false;
-	Algorithms m_SelectedAlgorithm = Algorithms::DFS;
+	Algorithms m_SelectedAlgorithm = Algorithms::NONE;
 	// It can't access application class
 	std::pair<uint32_t, uint32_t>* m_Route;
 

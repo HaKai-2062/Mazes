@@ -85,16 +85,19 @@ namespace ImGuiHandler
                 application.m_ButtonStates |= (ImGui::Button("Recursive Backtrack") ? Application::BUILDER_RECURSIVE_BACKTRACK : 0x00);
                 application.m_ButtonStates |= (ImGui::Button("Kruskal") ? Application::BUILDER_KRUSKAL : 0x00);
                 application.m_ButtonStates |= (ImGui::Button("Prims") ? Application::BUILDER_PRIMS : 0x00);
+                application.m_ButtonStates |= (ImGui::Button("Wilson") ? Application::BUILDER_WILSON : 0x00);
             }
             else if ((application.m_MazeBuilder && application.m_MazeBuilder->m_Completed) ||
                 application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || 
                 application.IsButtonPressed(Application::BUILDER_KRUSKAL) || 
-                application.IsButtonPressed(Application::BUILDER_PRIMS))
+                application.IsButtonPressed(Application::BUILDER_PRIMS) || 
+                application.IsButtonPressed(Application::BUILDER_WILSON))
             {
                 ImGui::BeginDisabled();
                 ImGui::Button("Recursive Backtrack");
                 ImGui::Button("Kruskal");
                 ImGui::Button("Prims");
+                ImGui::Button("Wilson");
                 ImGui::EndDisabled();
             }
             ImGui::TreePop();

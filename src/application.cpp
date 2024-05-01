@@ -16,36 +16,46 @@ Application::~Application()
 
 void Application::GetButtonStates()
 {
+    if (!m_Maze)
+        return;
+
     if (!m_Maze->MazeCompleted())
     {
-        if (IsButtonPressed(BUILDER_RECURSIVE_BACKTRACK))
+        // To get the offset
+        uint16_t j = BUILDER_RECURSIVE_BACKTRACK;
+
+        for (uint32_t i = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK; i <= MazeBuilder::Algorithms::WILSON; i++, j*=2)
         {
-            if (!m_MazeBuilder)
+            if (IsButtonPressed(j) && !m_MazeBuilder)
             {
-                m_BuilderSelected = MazeBuilder::Algorithms::RECURSIVE_BACKTRACK;
-                m_MazeBuilder = new MazeBuilder(m_Maze, static_cast<uint8_t>(m_BuilderSelected));
+                m_BuilderSelected = static_cast<MazeBuilder::Algorithms>(i);
+                m_MazeBuilder = new MazeBuilder(m_Maze, i);
+                break;
             }
+        }
+
+        switch (m_BuilderSelected)
+        {
+        case MazeBuilder::Algorithms::RECURSIVE_BACKTRACK:
+        {
             m_MazeBuilder->RecursiveBacktrack();
+            break;
         }
-
-        if (IsButtonPressed(BUILDER_KRUSKAL))
+        case MazeBuilder::Algorithms::KRUSKAL:
         {
-            if (!m_MazeBuilder)
-            {
-                m_BuilderSelected = MazeBuilder::Algorithms::KRUSKAL;
-                m_MazeBuilder = new MazeBuilder(m_Maze, static_cast<uint8_t>(m_BuilderSelected));
-            }
             m_MazeBuilder->RandomizedKruskal();
+            break;
         }
-
-        if (IsButtonPressed(BUILDER_PRIMS))
+        case MazeBuilder::Algorithms::PRIMS:
         {
-            if (!m_MazeBuilder)
-            {
-                m_BuilderSelected = MazeBuilder::Algorithms::PRIMS;
-                m_MazeBuilder = new MazeBuilder(m_Maze, static_cast<uint8_t>(m_BuilderSelected));
-            }
             m_MazeBuilder->RandomizedPrims();
+            break;
+        }
+        case MazeBuilder::Algorithms::WILSON:
+        {
+            m_MazeBuilder->Wilson();
+            break;
+        }
         }
     }
     else if (m_MazeBuilder && !m_MazeBuilder->m_Completed)
@@ -66,6 +76,7 @@ void Application::GetButtonStates()
         m_ButtonStates &= ~BUILDER_RECURSIVE_BACKTRACK;
         m_ButtonStates &= ~BUILDER_KRUSKAL;
         m_ButtonStates &= ~BUILDER_PRIMS;
+        m_ButtonStates &= ~BUILDER_WILSON;
         m_ButtonStates &= ~SOLVER_BFS;
         m_ButtonStates &= ~SOLVER_DFS;
     }
@@ -250,4 +261,6 @@ void Application::DeleteMaze()
     m_Maze = nullptr;
     m_MazeBuilder = nullptr;
     m_MazeSolver = nullptr;
+    m_BuilderSelected = MazeBuilder::Algorithms::NONE;
+    m_SolverSelected = MazeSolver::Algorithms::NONE;
 }
