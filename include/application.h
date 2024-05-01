@@ -43,6 +43,16 @@ public:
                 }
                 m_MazeBuilder->RandomizedKruskal();
             }
+
+            if (IsButtonPressed(BUILDER_PRIMS))
+            {
+                if (!m_MazeBuilder)
+                {
+                    m_BuilderSelected = MazeBuilder::Algorithms::PRIMS;
+                    m_MazeBuilder = new MazeBuilder(m_Maze, static_cast<uint8_t>(m_BuilderSelected));
+                }
+                m_MazeBuilder->RandomizedPrims();
+            }
         }
         else if (m_MazeBuilder && !m_MazeBuilder->m_Completed)
         {
@@ -61,6 +71,7 @@ public:
 
             m_ButtonStates &= ~BUILDER_RECURSIVE_BACKTRACK;
             m_ButtonStates &= ~BUILDER_KRUSKAL;
+            m_ButtonStates &= ~BUILDER_PRIMS;
             m_ButtonStates &= ~SOLVER_BFS;
             m_ButtonStates &= ~SOLVER_DFS;
         }
@@ -265,8 +276,9 @@ public:
         MAZE = 0x02,
         BUILDER_RECURSIVE_BACKTRACK = 0x04,
         BUILDER_KRUSKAL = 0x08,
-        SOLVER_DFS = 0x10,
-        SOLVER_BFS = 0x20
+        BUILDER_PRIMS = 0x10,
+        SOLVER_DFS = 0x20,
+        SOLVER_BFS = 0x40
     };
 
     uint16_t m_ButtonStates = 0x00;

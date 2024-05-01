@@ -121,17 +121,17 @@ public:
                 m_CellOrigin.push_back(std::make_pair<float, float>(i + normalizedHalfCellWidth, j + normalizedHalfCellHeight));
 
                 // Draw the cell
-                // right bottom
-                m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness), m_CellOrigin[currentCell].second + normalizedHalfCellHeight));
-                colorOfVertex();
                 // right top
-                m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness), m_CellOrigin[currentCell].second - normalizedHalfCellHeight - (isWallSouth ? 0 : normalizedWallThickness)));
+                m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness), m_CellOrigin[currentCell].second + normalizedHalfCellHeight + (isWallSouth ? 0 : normalizedWallThickness)));
+                colorOfVertex();
+                // right bottom
+                m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness), m_CellOrigin[currentCell].second - normalizedHalfCellHeight));
                 colorOfVertex();
                 // left bottom
-                m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first - normalizedHalfCellWidth, m_CellOrigin[currentCell].second - normalizedHalfCellHeight - (isWallSouth ? 0 : normalizedWallThickness)));
+                m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first - normalizedHalfCellWidth, m_CellOrigin[currentCell].second - normalizedHalfCellHeight));
                 colorOfVertex();
                 // left top
-                m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first - normalizedHalfCellWidth, m_CellOrigin[currentCell].second + normalizedHalfCellHeight));
+                m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first - normalizedHalfCellWidth, m_CellOrigin[currentCell].second + normalizedHalfCellHeight + (isWallSouth ? 0 : normalizedWallThickness)));
                 colorOfVertex();
                 
                 currentCell++;

@@ -77,17 +77,23 @@ namespace ImGuiHandler
         if (ImGui::TreeNode("Building Algorithms"))
         {
             if ((!application.m_MazeBuilder || !application.m_MazeBuilder->m_Completed) &&
-                !application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) && !application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+                !application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) && 
+                !application.IsButtonPressed(Application::BUILDER_KRUSKAL) &&
+                !application.IsButtonPressed(Application::BUILDER_PRIMS))
             {
                 application.m_ButtonStates |= (ImGui::Button("Recursive Backtrack") ? Application::BUILDER_RECURSIVE_BACKTRACK : 0x00);
                 application.m_ButtonStates |= (ImGui::Button("Kruskal") ? Application::BUILDER_KRUSKAL : 0x00);
+                application.m_ButtonStates |= (ImGui::Button("Prims") ? Application::BUILDER_PRIMS : 0x00);
             }
             else if ((application.m_MazeBuilder && application.m_MazeBuilder->m_Completed) ||
-                application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+                application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || 
+                application.IsButtonPressed(Application::BUILDER_KRUSKAL) || 
+                application.IsButtonPressed(Application::BUILDER_PRIMS))
             {
                 ImGui::BeginDisabled();
                 ImGui::Button("Recursive Backtrack");
                 ImGui::Button("Kruskal");
+                ImGui::Button("Prims");
                 ImGui::EndDisabled();
             }
             ImGui::TreePop();
@@ -158,7 +164,7 @@ namespace ImGuiHandler
             ImGui::TreePop();
         }
 
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Colors"))
         {
             ImGui::ColorEdit4("Maze", application.m_Maze->m_ColorMaze);
@@ -171,7 +177,7 @@ namespace ImGuiHandler
             ImGui::TreePop();
         }
 
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Animation"))
         {
             ImGui::Checkbox("Path Animation", &application.m_PathAnimation);
