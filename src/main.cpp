@@ -2,17 +2,12 @@
 #include <vector>
 #include <thread>
 #include <chrono>
-#include <random>
-#include <numeric>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <imgui.h>
 
 #include "shader.h"
-#include "maze.h"
-#include "algorithms.h"
-#include "application.h"
+// application.h is pre-included so only include this once
 #include "imguiHandler.h"
 
 void callbackResize(GLFWwindow* window, int width, int height);
