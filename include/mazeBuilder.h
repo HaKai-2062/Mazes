@@ -33,6 +33,7 @@ public:
 	bool m_Completed = false;
 	Algorithms m_SelectedAlgorithm = Algorithms::NONE;
 	uint32_t m_StartCoordinate = 0;
+	std::vector<uint32_t> m_Path;
 
 	// For RECURSIVE_BACKTRACK
 	std::stack<uint32_t> m_Stack;
@@ -46,6 +47,11 @@ public:
 	// These represent the indexes
 	std::vector<uint32_t> m_WallShuffler;
 	uint32_t m_LastCell = 0;
+
+	// For Wilson
+	std::vector<uint32_t> m_ElementsLeft;
+	uint32_t m_RandomWalkStart = 0;
+	uint32_t m_RandomWalkEnd = 0;
 };
 
 class DisjointSet

@@ -268,7 +268,7 @@ int main()
         if (!application.m_MazeBuilder)
             rectangleCount = application.m_Maze->DrawMaze();
         else
-            rectangleCount = application.m_Maze->DrawMaze(&application.m_MazeBuilder->m_Stack, &application.m_Route);
+            rectangleCount = application.m_Maze->DrawMaze(&application.m_MazeBuilder->m_Path, &application.m_Route);
 
         uint32_t rectangleCount2 = 0;
         rectangleCount2 = application.GetPathIfFound();

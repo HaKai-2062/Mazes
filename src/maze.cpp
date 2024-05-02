@@ -27,19 +27,14 @@ Maze::~Maze()
     std::cout << "Maze Destroyed" << std::endl;
 }
 
-uint32_t Maze::DrawMaze(std::stack<uint32_t>* stack, std::pair<uint32_t, uint32_t>* route)
+uint32_t Maze::DrawMaze(std::vector<uint32_t>* path, std::pair<uint32_t, uint32_t>* route)
 {
     uint32_t currentCell = 0;
 
     auto colorOfVertex = [&]()
         {
             // RG, BA color of each block
-            if (stack && !stack->empty() && currentCell == stack->top())
-            {
-                m_Vertices.push_back(std::make_pair(m_ColorStackTop[0], m_ColorStackTop[1]));
-                m_Vertices.push_back(std::make_pair(m_ColorStackTop[2], m_ColorStackTop[3]));
-            }
-            else if (route && currentCell == route->first)
+            if (route && currentCell == route->first)
             {
                 m_Vertices.push_back(std::make_pair(m_ColorStart[0], m_ColorStart[1]));
                 m_Vertices.push_back(std::make_pair(m_ColorStart[2], m_ColorStart[3]));
@@ -48,6 +43,11 @@ uint32_t Maze::DrawMaze(std::stack<uint32_t>* stack, std::pair<uint32_t, uint32_
             {
                 m_Vertices.push_back(std::make_pair(m_ColorEnd[0], m_ColorEnd[1]));
                 m_Vertices.push_back(std::make_pair(m_ColorEnd[2], m_ColorEnd[3]));
+            }
+            else if (path && !path->empty() && std::find(path->begin(), path->end(), currentCell) != path->end())
+            {
+                m_Vertices.push_back(std::make_pair(m_ColorSearchTop[0], m_ColorSearchTop[1]));
+                m_Vertices.push_back(std::make_pair(m_ColorSearchTop[2], m_ColorSearchTop[3]));
             }
             else if (m_VisitedCellInfo.find(currentCell) != m_VisitedCellInfo.end() && (m_VisitedCellInfo[currentCell] & Maze::CELL_SEARCHED))
             {
@@ -62,7 +62,7 @@ uint32_t Maze::DrawMaze(std::stack<uint32_t>* stack, std::pair<uint32_t, uint32_
             else
             {
                 m_Vertices.push_back(std::make_pair(m_ColorBackground[0], m_ColorBackground[1]));
-                m_Vertices.push_back(std::make_pair(m_ColorBackground[2], m_ColorStackTop[3]));
+                m_Vertices.push_back(std::make_pair(m_ColorBackground[2], m_ColorBackground[3]));
             }
         };
 

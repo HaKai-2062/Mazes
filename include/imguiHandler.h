@@ -176,7 +176,7 @@ namespace ImGuiHandler
             ImGui::ColorEdit4("End", application.m_Maze->m_ColorEnd);
             ImGui::ColorEdit4("Path", application.m_ColorPath);
             ImGui::ColorEdit4("Search", application.m_Maze->m_ColorSearched);
-            ImGui::ColorEdit4("Stack Top", application.m_Maze->m_ColorStackTop);
+            ImGui::ColorEdit4("Search Top", application.m_Maze->m_ColorSearchTop);
             ImGui::ColorEdit4("Background", application.m_Maze->m_ColorBackground);
             ImGui::TreePop();
         }

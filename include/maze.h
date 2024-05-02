@@ -17,7 +17,7 @@ public:
 
     ~Maze();
 
-    uint32_t DrawMaze(std::stack<uint32_t>* stack = nullptr, std::pair<uint32_t, uint32_t>* route = nullptr);
+    uint32_t DrawMaze(std::vector<uint32_t>* stack = nullptr, std::pair<uint32_t, uint32_t>* route = nullptr);
 
     bool MazeCompleted() const;
 
@@ -42,7 +42,7 @@ public:
     float m_ColorMaze[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
     float m_ColorStart[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
     float m_ColorEnd[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
-    float m_ColorStackTop[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
+    float m_ColorSearchTop[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
     float m_ColorSearched[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
     float m_ColorBackground[4] = { 1.0f, 0.5f, 0.2f, 1.0f };
     
@@ -50,7 +50,7 @@ public:
     uint16_t m_HalfCellHeight = 10;
     uint16_t m_WallThickness = 2;
     uint16_t m_TotalCellHeight = 0;
-    uint16_t m_LineThickness = 4;
+    uint16_t m_LineThickness = 1;
 
 	uint16_t m_MazeWidth = 0, m_MazeHeight = 0;
 	uint32_t m_MazeArea, m_CellsAcrossWidth = 0, m_CellsAcrossHeight = 0, m_VisitedCellCount = 0;
