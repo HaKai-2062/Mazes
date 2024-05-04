@@ -21,11 +21,16 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 add_subdirectory(vendor/GLFW)
 add_subdirectory(vendor/Glad)
 add_subdirectory(vendor/imgui-docking)
+add_subdirectory(vendor/implot)
 
 file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS 
 "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
-"${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_glfw.cpp"
-"${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_opengl3.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui-docking/backends/imgui_impl_glfw.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui-docking/backends/imgui_impl_opengl3.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/vendor/implot/backends/imgui_impl_opengl3.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/vendor/implot/backends/implot.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/vendor/implot/backends/implot_items.cpp"
+"${CMAKE_CURRENT_SOURCE_DIR}/vendor/implot/backends/implot_demo.cpp"
 "${CMAKE_CURRENT_SOURCE_DIR}/vendor/Glad/*.c")
 
 add_executable("${CMAKE_PROJECT_NAME}")
@@ -36,7 +41,7 @@ target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC
 GLFW_INCLUDE_NONE=1
 IMGUI_IMPL_OPENGL_LOADER_GLAD=1)
 
-target_sources("${CMAKE_PROJECT_NAME}" PRIVATE ${MY_SOURCES}  "include/mazeSolver.h")
+target_sources("${CMAKE_PROJECT_NAME}" PRIVATE ${MY_SOURCES})
 
 if(MSVC) # If using the VS compiler...
 
@@ -54,9 +59,11 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC
 "${CMAKE_CURRENT_SOURCE_DIR}/include"
 "${CMAKE_CURRENT_SOURCE_DIR}/vendor/Glad/include"
 "${CMAKE_CURRENT_SOURCE_DIR}/vendor/GLFW/include"
-"${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui")
+"${CMAKE_CURRENT_SOURCE_DIR}/vendor/implot"
+"${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui-docking")
 
 target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE 
 glfw
 glad
-imgui)
+imgui
+implot)

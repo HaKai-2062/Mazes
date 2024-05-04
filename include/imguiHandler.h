@@ -3,15 +3,21 @@
 #include <backends/imgui_impl_opengl3.h>
 #include <imgui_internal.h>
 
+#include <implot.h>
+
 #include "application.h"
 
 namespace ImGuiHandler
 {
+    void ControlTab(bool& showDemoWindow, Application& application);
+    void VisualizeTab(bool& showDemoWindow, Application& application);
+
     void Init(const char* glslVersion, GLFWwindow* window)
     {
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+        ImPlot::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -61,24 +67,62 @@ namespace ImGuiHandler
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        
+
         dockSpaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_HiddenTabBar);
-        
+
+        ImGui::Begin("Main");
+        if (ImGui::BeginTabBar("MainTab"))
+        {
+            if (ImGui::BeginTabItem("Controls"))
+            {
+                ControlTab(showDemoWindow, application);
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Visualize"))
+            {
+                VisualizeTab(showDemoWindow, application);
+                ImGui::EndTabItem();
+            }
+        }
+        // FIXME: ImGui::End() called in main.cpp
+    }
+
+    void EndFrame(ImGuiID dockSpaceID, unsigned int* texture, ImVec2& getRegion, bool& imguiWindowResized)
+    {
+        ImGui::SetNextWindowDockID(dockSpaceID, ImGuiCond_FirstUseEver);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
+        ImGui::Begin("SceneWindow", false, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar);
+        if (getRegion.x != ImGui::GetContentRegionAvail().x || getRegion.y != ImGui::GetContentRegionAvail().y)
+            imguiWindowResized = true;
+        getRegion = ImGui::GetContentRegionAvail();
+
+        ImGui::Image((void*)(unsigned int)(*texture), getRegion);
+        ImGui::PopStyleVar(3);
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    void ControlTab(bool& showDemoWindow, Application& application)
+    {
         if (showDemoWindow)
-            ImGui::ShowDemoWindow(&showDemoWindow);
-        
+            ImPlot::ShowDemoWindow(&showDemoWindow);
+
         ImGuiIO& io = ImGui::GetIO();
-        ImGui::Begin("Controls");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::Checkbox("Demo Window", &showDemoWindow);
         ImGui::NewLine();
         ImGui::NewLine();
-        
+
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Building Algorithms"))
         {
             if ((!application.m_MazeBuilder || !application.m_MazeBuilder->m_Completed) &&
-                !application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) && 
+                !application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) &&
                 !application.IsButtonPressed(Application::BUILDER_KRUSKAL) &&
                 !application.IsButtonPressed(Application::BUILDER_PRIMS))
             {
@@ -88,9 +132,9 @@ namespace ImGuiHandler
                 application.m_ButtonStates |= (ImGui::Button("Wilson") ? Application::BUILDER_WILSON : 0x00);
             }
             else if ((application.m_MazeBuilder && application.m_MazeBuilder->m_Completed) ||
-                application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || 
-                application.IsButtonPressed(Application::BUILDER_KRUSKAL) || 
-                application.IsButtonPressed(Application::BUILDER_PRIMS) || 
+                application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) ||
+                application.IsButtonPressed(Application::BUILDER_KRUSKAL) ||
+                application.IsButtonPressed(Application::BUILDER_PRIMS) ||
                 application.IsButtonPressed(Application::BUILDER_WILSON))
             {
                 ImGui::BeginDisabled();
@@ -107,17 +151,24 @@ namespace ImGuiHandler
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::TreeNode("Solving Algorithms"))
         {
-            if (application.m_MazeBuilder && application.m_MazeBuilder->m_Completed && !application.IsButtonPressed(Application::SOLVER_DFS) && !application.IsButtonPressed(Application::SOLVER_BFS))
+            if (application.m_MazeBuilder && application.m_MazeBuilder->m_Completed
+                && !application.IsButtonPressed(Application::SOLVER_DFS) && !application.IsButtonPressed(Application::SOLVER_BFS)
+                && !application.IsButtonPressed(Application::SOLVER_DIJKSTRA) && !application.IsButtonPressed(Application::SOLVER_ASTAR))
             {
                 application.m_ButtonStates |= (ImGui::Button("Depth First Search") ? Application::SOLVER_DFS : 0);
                 application.m_ButtonStates |= (ImGui::Button("Breadth First Search") ? Application::SOLVER_BFS : 0);
+                application.m_ButtonStates |= (ImGui::Button("Dijkstra") ? Application::SOLVER_DIJKSTRA : 0);
+                application.m_ButtonStates |= (ImGui::Button("A star") ? Application::SOLVER_ASTAR : 0);
             }
             else if (!application.m_MazeBuilder || !application.m_MazeBuilder->m_Completed ||
-                application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || application.IsButtonPressed(Application::BUILDER_KRUSKAL))
+                application.IsButtonPressed(Application::BUILDER_RECURSIVE_BACKTRACK) || application.IsButtonPressed(Application::BUILDER_KRUSKAL) ||
+                application.IsButtonPressed(Application::SOLVER_DIJKSTRA) || application.IsButtonPressed(Application::SOLVER_ASTAR))
             {
                 ImGui::BeginDisabled();
                 ImGui::Button("Depth first search");
                 ImGui::Button("Breadth first search");
+                ImGui::Button("Dijkstra");
+                ImGui::Button("A star");
                 ImGui::EndDisabled();
             }
             ImGui::TreePop();
@@ -128,7 +179,7 @@ namespace ImGuiHandler
         if (ImGui::TreeNode("Main"))
         {
             uint16_t lower1 = 1, higher1 = 200, higher2 = 100;
-            uint32_t lower3 = 0, higher3 = application.m_Maze->m_HalfCellHeight, higher4 = application.m_Maze->m_MazeArea-1;
+            uint32_t lower3 = 0, higher3 = application.m_Maze->m_HalfCellHeight, higher4 = application.m_Maze->m_MazeArea - 1;
 
             uint16_t cellWidth = application.m_Maze->m_HalfCellHeight;
             uint16_t wallWidth = application.m_Maze->m_WallThickness;
@@ -190,22 +241,74 @@ namespace ImGuiHandler
         }
     }
 
-    void EndFrame(ImGuiID dockSpaceID, unsigned int* texture, ImVec2& getRegion, bool& imguiWindowResized)
+    void VisualizeTab(bool& showDemoWindow, Application& application)
     {
-        ImGui::SetNextWindowDockID(dockSpaceID, ImGuiCond_FirstUseEver);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.f, 0.f));
-        ImGui::Begin("SceneWindow", false, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_HorizontalScrollbar);
-        if (getRegion.x != ImGui::GetContentRegionAvail().x || getRegion.y != ImGui::GetContentRegionAvail().y)
-            imguiWindowResized = true;
-        getRegion = ImGui::GetContentRegionAvail();
+        static int minDisplayValue = 0;
+        static int maxDisplayValue = application.m_Maze->m_RandUpperLimit;
+        static int previousValue = application.m_Maze->m_RandUpperLimit;
 
-        ImGui::Image((void*)(unsigned int)(*texture), getRegion);
-        ImGui::PopStyleVar(3);
-        ImGui::End();
+        static bool displayValue = false;
+        static char fmtData[4]{};
 
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        static ImPlotColormap map = ImPlotColormap_Viridis;
+        if (ImPlot::ColormapButton(ImPlot::GetColormapName(map), ImVec2(225, 0), map)) {
+            map = (map + 1) % ImPlot::GetColormapCount();
+            // We bust the color cache of our plots so that item colors will
+            // resample the new colormap in the event that they have already
+            // been created. See documentation in implot.h.
+            //BustColorCache("##Heatmap1");
+        }
+
+        ImGui::SameLine();
+        ImGui::LabelText("##Colormap Index", "%s", "Change Colormap");
+        ImGui::SetNextItemWidth(225);
+        ImGui::SliderInt("Min Display", &minDisplayValue, 0, 500);
+        ImGui::SetNextItemWidth(225);
+        ImGui::SliderInt("Max Display", &maxDisplayValue, 1, 500);
+
+        if (minDisplayValue >= maxDisplayValue)
+            minDisplayValue = maxDisplayValue-1;
+
+        ImGui::Checkbox("Display Values", &displayValue);
+
+        if (displayValue)
+        {
+            fmtData[0] = '%';
+            fmtData[1] = 'i';
+            fmtData[2] = '\0';
+        }
+        else
+        {
+            fmtData[0] = '\0';
+        }
+
+        static ImPlotHeatmapFlags hm_flags = ImPlotHeatmapFlags_ColMajor;
+        
+        ImPlot::PushColormap(map);
+
+        if (ImPlot::BeginPlot("##Heatmap1", ImVec2(225, 225), ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText))
+        {
+            ImPlot::PlotHeatmap("heat", application.m_Maze->m_CellWeights.data(), application.m_Maze->m_CellsAcrossHeight, application.m_Maze->m_CellsAcrossWidth, minDisplayValue, maxDisplayValue, fmtData, ImPlotPoint(0, 0), ImPlotPoint(application.m_Maze->m_CellsAcrossWidth, application.m_Maze->m_CellsAcrossHeight), hm_flags);
+            ImPlot::EndPlot();
+        }
+        ImGui::SameLine();
+        ImPlot::ColormapScale("##HeatScale", minDisplayValue, maxDisplayValue, ImVec2(60, 225));
+        ImPlot::PopColormap();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0.0f / 7.0f, 0.6f, 0.6f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0.0f / 7.0f, 0.7f, 0.7f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0.0f / 7.0f, 0.8f, 0.8f));
+        if (ImGui::Button("Reassign Weights"))
+        {
+            application.m_Maze->SetCellWeights();
+        }
+        ImGui::PopStyleColor(3);
+        ImGui::SetNextItemWidth(225);
+        ImGui::SliderInt("Max Weight Value", &application.m_Maze->m_RandUpperLimit, 1, 500);
+        if (previousValue != application.m_Maze->m_RandUpperLimit)
+        {
+            previousValue = application.m_Maze->m_RandUpperLimit;
+            application.m_Maze->SetCellWeights();
+        }
     }
 }

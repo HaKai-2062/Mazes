@@ -39,7 +39,9 @@ public:
         BUILDER_PRIMS = 0x10,
         BUILDER_WILSON = 0x20,
         SOLVER_DFS = 0x40,
-        SOLVER_BFS = 0x80
+        SOLVER_BFS = 0x80,
+        SOLVER_DIJKSTRA = 0x100,
+        SOLVER_ASTAR = 0x200
     };
 
     uint16_t m_ButtonStates = 0x00;

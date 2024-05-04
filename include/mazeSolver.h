@@ -22,7 +22,9 @@ public:
 	{
 		NONE = 0,
 		DFS,
-		BFS
+		BFS,
+		DIJKSTRA,
+		ASTAR
 	};
 
 	Maze* m_Maze = nullptr;

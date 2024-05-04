@@ -79,6 +79,8 @@ void Application::GetButtonStates()
         m_ButtonStates &= ~BUILDER_WILSON;
         m_ButtonStates &= ~SOLVER_BFS;
         m_ButtonStates &= ~SOLVER_DFS;
+        m_ButtonStates &= ~SOLVER_DIJKSTRA;
+        m_ButtonStates &= ~SOLVER_ASTAR;
     }
 
     if (IsButtonPressed(PATH) && m_MazeSolver && m_MazeSolver->m_Completed)
@@ -94,18 +96,26 @@ void Application::GetButtonStates()
 
         m_ButtonStates &= ~SOLVER_BFS;
         m_ButtonStates &= ~SOLVER_DFS;
+        m_ButtonStates &= ~SOLVER_DIJKSTRA;
+        m_ButtonStates &= ~SOLVER_ASTAR;
     }
 
     // Always want to keep reset buttons pressable after maze completion
     m_ButtonStates &= ~MAZE;
     m_ButtonStates &= ~PATH;
 
-    if (m_MazeBuilder && m_MazeBuilder->m_Completed && (IsButtonPressed(SOLVER_DFS) || IsButtonPressed(SOLVER_BFS)) && (!m_MazeSolver || !m_MazeSolver->m_Completed))
+    if (m_MazeBuilder && m_MazeBuilder->m_Completed && 
+        (IsButtonPressed(SOLVER_DFS) || IsButtonPressed(SOLVER_BFS) || IsButtonPressed(SOLVER_DIJKSTRA) || IsButtonPressed(SOLVER_ASTAR)) &&
+        (!m_MazeSolver || !m_MazeSolver->m_Completed))
     {
         if (IsButtonPressed(SOLVER_DFS))
             m_SolverSelected = MazeSolver::DFS;
         if (IsButtonPressed(SOLVER_BFS))
             m_SolverSelected = MazeSolver::BFS;
+        if (IsButtonPressed(SOLVER_DIJKSTRA))
+            m_SolverSelected = MazeSolver::DIJKSTRA;
+        if (IsButtonPressed(SOLVER_ASTAR))
+            m_SolverSelected = MazeSolver::ASTAR;
 
         if (!m_MazeSolver)
         {

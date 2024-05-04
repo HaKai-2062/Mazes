@@ -12,7 +12,7 @@ Maze::Maze(uint16_t width, uint16_t height, uint16_t cellWidth, uint16_t wallThi
     m_MazeArea = m_CellsAcrossHeight * m_CellsAcrossWidth;
 
     m_CellOrigin.resize(m_MazeArea);
-    // Specifying color using uniform will be way more efficient
+    // Specifying color using uniform will be way more efficient?
     // Corners use 1 vertex, Colors use 2 vertices
     // 12 Vertices make a cell: 4 corners + 4 colors
     m_Vertices.resize(static_cast<size_t>(12 * m_MazeArea));
@@ -20,6 +20,9 @@ Maze::Maze(uint16_t width, uint16_t height, uint16_t cellWidth, uint16_t wallThi
 
     m_LineVertices.resize(static_cast<size_t>(12 * m_MazeArea));
     m_LineIndices.resize(static_cast<size_t>(6 * m_MazeArea));
+
+    m_CellWeights.reserve(m_MazeArea);
+    SetCellWeights();
 }
 
 Maze::~Maze()
@@ -135,4 +138,14 @@ uint32_t Maze::DrawMaze(std::vector<uint32_t>* path, std::pair<uint32_t, uint32_
 bool Maze::MazeCompleted() const
 {
     return m_VisitedCellCount == m_CellsAcrossWidth * m_CellsAcrossHeight;
+}
+
+void Maze::SetCellWeights()
+{
+    m_CellWeights.clear();
+
+    for (uint32_t i = 0; i < m_MazeArea; i++)
+    {
+        m_CellWeights.push_back(rand() % m_RandUpperLimit);
+    }
 }

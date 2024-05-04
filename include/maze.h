@@ -14,12 +14,12 @@ public:
     Maze(Maze&&) = delete;
 
     Maze(uint16_t width, uint16_t height, uint16_t cellWidth = 10, uint16_t wallThickness = 2);
-
     ~Maze();
 
     uint32_t DrawMaze(std::vector<uint32_t>* stack = nullptr, std::pair<uint32_t, uint32_t>* route = nullptr);
-
     bool MazeCompleted() const;
+    // Each cell does std::abs(cellWeight+neighbourWeight) to get corresponding weight
+    void SetCellWeights();
 
 public:
     // This is made public to let our algorithm access it
@@ -62,4 +62,7 @@ public:
 
     std::vector<std::pair<float, float>> m_LineVertices;
     std::vector<uint32_t> m_LineIndices;
+
+    std::vector<uint32_t> m_CellWeights;
+    int m_RandUpperLimit = 30;
 };
