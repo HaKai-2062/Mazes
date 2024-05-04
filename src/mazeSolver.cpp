@@ -16,6 +16,10 @@ MazeSolver::MazeSolver(Maze* maze, uint8_t selectedAlgorithm, std::pair<uint32_t
 	case Algorithms::BFS:
 		m_Queue.push(route.first);
 		break;
+	case Algorithms::DIJKSTRA:
+		m_Maze->m_CellWeights[route.first] = 0;
+		m_PQueue.push({route.first, 0});
+		break;
 	}
 
 	m_Parent.resize(m_Maze->m_MazeArea);
@@ -35,7 +39,6 @@ void MazeSolver::DepthFirstSearch()
 {
 	if (m_Stack.empty())
 	{
-		//std::cout << "Stack empty sus!\n";
 		return;
 	}
 
@@ -112,7 +115,6 @@ void MazeSolver::BreadthFirstSearch()
 
 	if (m_Queue.empty())
 	{
-		//std::cout << "Queue empty sus!\n";
 		return;
 	}
 
@@ -195,6 +197,86 @@ void MazeSolver::BreadthFirstSearch()
 	}
 }
 
+void MazeSolver::DijkstraSearch()
+{
+	if (m_PQueue.empty())
+	{
+		return;
+	}
+
+	WeightDetails weightInfo = m_PQueue.top();
+
+	// To get negative results for checks
+	int64_t currentCell = static_cast<int64_t>(weightInfo.id);
+	uint32_t northIndex = currentCell - 1;
+	uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
+	int64_t southIndex = currentCell + 1;
+	int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
+
+	m_PQueue.pop();
+	m_Visited.insert(currentCell);
+
+	auto updateNeighbourWeights = [&](uint32_t neighbourCell)
+		{
+			if (m_Visited.find(neighbourCell) != m_Visited.end())
+				return;
+
+			uint32_t computedWeight = m_Maze->m_CellWeights[currentCell] + m_Maze->m_CellWeights[neighbourCell];
+			uint32_t weightInPQueue = std::numeric_limits<uint32_t>::max();
+			std::priority_queue<WeightDetails, std::vector<WeightDetails>, CompareWeights> tempPQueue;
+
+			while (!m_PQueue.empty())
+			{
+				if (m_PQueue.top().id == neighbourCell)
+				{
+					weightInPQueue = m_PQueue.top().weight;
+				}
+				else
+				{
+					tempPQueue.push(m_PQueue.top());
+				}
+
+				m_PQueue.pop();
+			}
+
+			// This basically has all elements of m_PQueue except the neighbourCell if it existed
+			m_PQueue = tempPQueue;
+
+			if (computedWeight < weightInPQueue)
+			{
+				m_PQueue.push({ neighbourCell, computedWeight });
+			}
+			else
+			{
+				m_PQueue.push({ neighbourCell, weightInPQueue });
+			}
+
+			m_Maze->m_VisitedCellInfo[neighbourCell] |= Maze::CELL_SEARCHED;
+			m_Parent[neighbourCell] = currentCell;
+		};
+
+	// North
+	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0 )
+	{
+		updateNeighbourWeights(northIndex);
+	}
+	// East
+	if (eastIndex < (m_Maze->m_CellsAcrossWidth * m_Maze->m_CellsAcrossHeight) && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_EAST) != 0)
+	{
+		updateNeighbourWeights(eastIndex);
+	}
+	// South
+	if ((southIndex % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0)
+	{
+		updateNeighbourWeights(southIndex);
+	}
+	// West
+	if (westIndex >= 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_WEST) != 0)
+	{
+		updateNeighbourWeights(westIndex);
+	}
+}
+
 void MazeSolver::OnCompletion()
 {
 	if (m_SelectedAlgorithm == MazeSolver::Algorithms::DFS)
@@ -210,7 +292,7 @@ void MazeSolver::OnCompletion()
 		}
 	}
 
-	if (m_SelectedAlgorithm == MazeSolver::Algorithms::BFS)
+	if (m_SelectedAlgorithm == MazeSolver::Algorithms::BFS || m_SelectedAlgorithm == MazeSolver::Algorithms::DIJKSTRA)
 	{
 		uint32_t currentCell = m_Route->second;
 

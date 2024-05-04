@@ -153,6 +153,19 @@ void Application::GetButtonStates()
             }
             break;
         }
+        case MazeSolver::DIJKSTRA:
+        {
+            if (!m_MazeSolver->m_PQueue.empty() && m_MazeSolver->m_PQueue.top().id == m_Route.second)
+            {
+                m_MazeSolver->m_Completed = true;
+                std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Path.size() << " away!" << std::endl;
+                m_MazeSolver->OnCompletion();
+            }
+            else
+            {
+                m_MazeSolver->DijkstraSearch();
+            }
+        }
         }
     }
 }
