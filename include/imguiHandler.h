@@ -84,6 +84,7 @@ namespace ImGuiHandler
                 VisualizeTab(showDemoWindow, application);
                 ImGui::EndTabItem();
             }
+            ImGui::EndTabBar();
         }
         // FIXME: ImGui::End() called in main.cpp
     }
@@ -243,6 +244,7 @@ namespace ImGuiHandler
 
     void VisualizeTab(bool& showDemoWindow, Application& application)
     {
+
         static int minDisplayValue = 0;
         static int maxDisplayValue = application.m_Maze->m_RandUpperLimit;
         static int previousValue = application.m_Maze->m_RandUpperLimit;

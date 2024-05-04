@@ -253,6 +253,7 @@ void MazeSolver::DijkstraSearch()
 
 			m_Maze->m_VisitedCellInfo[neighbourCell] |= Maze::CELL_SEARCHED;
 			m_Parent[neighbourCell] = currentCell;
+			m_Maze->m_CellWeights[neighbourCell] = computedWeight < m_Maze->m_CellWeights[neighbourCell] ? computedWeight : m_Maze->m_CellWeights[neighbourCell];
 		};
 
 	// North
