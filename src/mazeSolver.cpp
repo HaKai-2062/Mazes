@@ -17,7 +17,30 @@ MazeSolver::MazeSolver(Maze* maze, uint8_t selectedAlgorithm, std::pair<uint32_t
 		m_Queue.push(route.first);
 		break;
 	case Algorithms::DIJKSTRA:
+		m_Distance.resize(m_Maze->m_MazeArea);
+		std::fill(m_Distance.begin(), m_Distance.end(), std::numeric_limits<uint32_t>::max());
+		m_Distance[route.first] = 0;
+		m_PQueue.push({ route.first, 0 });
+		break;
+
 	case Algorithms::ASTAR:
+		m_Heuristic.reserve(m_Maze->m_MazeArea);
+		uint32_t xEnd = route.second / m_Maze->m_CellsAcrossHeight;
+		uint32_t yEnd = route.second % m_Maze->m_CellsAcrossHeight;
+		uint32_t amplifier = 1;
+
+		for (uint32_t i = 0; i < m_Maze->m_MazeArea; i++)
+		{
+			uint32_t xCurrent = i / m_Maze->m_CellsAcrossHeight;
+			uint32_t yCurrent = i % m_Maze->m_CellsAcrossHeight;
+			
+			uint32_t xDifference = xCurrent > xEnd ? (xCurrent - xEnd) : (xEnd - xCurrent);
+			uint32_t yDifference = yCurrent > yEnd ? (yCurrent - yEnd) : (yEnd - yCurrent);
+
+			uint32_t euclidianDistance = std::sqrt(xDifference * xDifference + yDifference * yDifference);
+			m_Heuristic.push_back(amplifier * euclidianDistance);
+		}
+
 		m_Distance.resize(m_Maze->m_MazeArea);
 		std::fill(m_Distance.begin(), m_Distance.end(), std::numeric_limits<uint32_t>::max());
 		m_Distance[route.first] = 0;
@@ -259,6 +282,58 @@ void MazeSolver::DijkstraSearch()
 
 void MazeSolver::AstarSearch()
 {
+	if (m_PQueue.empty())
+	{
+		return;
+	}
+
+	WeightDetails weightInfo = m_PQueue.top();
+	int64_t currentCell = static_cast<int64_t>(weightInfo.id);
+	uint32_t currentWeight = weightInfo.weight;
+
+	// To get negative results for checks
+	uint32_t northIndex = currentCell - 1;
+	uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
+	int64_t southIndex = currentCell + 1;
+	int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
+
+	m_PQueue.pop();
+
+	auto updateNeighbourWeights = [&](uint32_t neighbourCell)
+		{
+			uint32_t nextCell = neighbourCell;
+			uint32_t nextWeight = m_Maze->m_CellWeights[neighbourCell];
+
+			// Relaxation
+			if (m_Distance[nextCell] > m_Distance[currentCell] + nextWeight + m_Heuristic[nextCell])
+			{
+				m_Distance[nextCell] = m_Distance[currentCell] + nextWeight + m_Heuristic[nextCell];
+				m_PQueue.push({ nextCell, m_Distance[nextCell] });
+				m_Maze->m_VisitedCellInfo[neighbourCell] |= Maze::CELL_SEARCHED;
+				m_Parent[nextCell] = currentCell;
+			}
+		};
+
+	// North
+	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0)
+	{
+		updateNeighbourWeights(northIndex);
+	}
+	// East
+	if (eastIndex < (m_Maze->m_CellsAcrossWidth * m_Maze->m_CellsAcrossHeight) && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_EAST) != 0)
+	{
+		updateNeighbourWeights(eastIndex);
+	}
+	// South
+	if ((southIndex % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0)
+	{
+		updateNeighbourWeights(southIndex);
+	}
+	// West
+	if (westIndex >= 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_WEST) != 0)
+	{
+		updateNeighbourWeights(westIndex);
+	}
 }
 
 void MazeSolver::OnCompletion()

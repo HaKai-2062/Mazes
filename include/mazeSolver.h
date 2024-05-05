@@ -62,4 +62,5 @@ public:
 	std::vector<uint32_t> m_Distance;
 
 	// For A-star
+	std::vector<uint32_t> m_Heuristic;
 };

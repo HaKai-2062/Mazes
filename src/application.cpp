@@ -151,6 +151,8 @@ void Application::GetButtonStates()
         }
         case MazeSolver::DIJKSTRA:
         {
+            // Waiting for queue to be empty guarentees shortest path
+            //if (m_MazeSolver->m_PQueue.empty())
             if (!m_MazeSolver->m_PQueue.empty() && m_MazeSolver->m_PQueue.top().id == m_Route.second)
             {
                 m_MazeSolver->OnCompletion();
@@ -163,6 +165,8 @@ void Application::GetButtonStates()
         }
         case MazeSolver::ASTAR:
         {
+            // Waiting for queue to be empty guarentees shortest path
+            //if (m_MazeSolver->m_PQueue.empty())
             if (!m_MazeSolver->m_PQueue.empty() && m_MazeSolver->m_PQueue.top().id == m_Route.second)
             {
                 m_MazeSolver->OnCompletion();
