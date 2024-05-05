@@ -8,6 +8,8 @@ struct WeightDetails
 {
 	uint32_t id = 0;
 	// Weights are set as infinity at start
+	// For Dijkstra weight = cost
+	// For A*, weight = cost + heuristic function (Euclidian distance)
 	uint32_t weight = std::numeric_limits<uint32_t>::max();
 };
 
@@ -29,6 +31,7 @@ public:
 	void DepthFirstSearch();
 	void BreadthFirstSearch();
 	void DijkstraSearch();
+	void AstarSearch();
 	void OnCompletion();
 
 public:
@@ -49,7 +52,6 @@ public:
 	std::vector<uint32_t> m_Path;
 	std::vector<uint32_t> m_Parent;
 
-
 	//For DFS
 	std::stack<uint32_t> m_Stack;
 	//For BFS
@@ -58,7 +60,6 @@ public:
 	// For Dijkstra, A-star
 	std::priority_queue<WeightDetails, std::vector<WeightDetails>, CompareWeights> m_PQueue;
 	std::vector<uint32_t> m_Distance;
-	std::unordered_set<uint32_t> m_Visited;
 
 	// For A-star
 };

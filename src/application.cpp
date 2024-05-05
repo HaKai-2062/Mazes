@@ -129,8 +129,6 @@ void Application::GetButtonStates()
         {
             if (!m_MazeSolver->m_Stack.empty() && m_MazeSolver->m_Stack.top() == m_Route.second)
             {
-                m_MazeSolver->m_Completed = true;
-                std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Path.size() << " away!" << std::endl;
                 m_MazeSolver->OnCompletion();
             }
             else
@@ -143,8 +141,6 @@ void Application::GetButtonStates()
         {
             if (!m_MazeSolver->m_Queue.empty() && m_MazeSolver->m_Queue.front() == m_Route.second)
             {
-                m_MazeSolver->m_Completed = true;
-                std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Path.size() << " away!" << std::endl;
                 m_MazeSolver->OnCompletion();
             }
             else
@@ -157,14 +153,25 @@ void Application::GetButtonStates()
         {
             if (!m_MazeSolver->m_PQueue.empty() && m_MazeSolver->m_PQueue.top().id == m_Route.second)
             {
-                m_MazeSolver->m_Completed = true;
-                std::cout << "Maze Solved. Goal is " << m_MazeSolver->m_Path.size() << " away!" << std::endl;
                 m_MazeSolver->OnCompletion();
             }
             else
             {
                 m_MazeSolver->DijkstraSearch();
             }
+            break;
+        }
+        case MazeSolver::ASTAR:
+        {
+            if (!m_MazeSolver->m_PQueue.empty() && m_MazeSolver->m_PQueue.top().id == m_Route.second)
+            {
+                m_MazeSolver->OnCompletion();
+            }
+            else
+            {
+                m_MazeSolver->AstarSearch();
+            }
+            break;
         }
         }
     }

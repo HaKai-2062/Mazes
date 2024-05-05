@@ -17,6 +17,7 @@ MazeSolver::MazeSolver(Maze* maze, uint8_t selectedAlgorithm, std::pair<uint32_t
 		m_Queue.push(route.first);
 		break;
 	case Algorithms::DIJKSTRA:
+	case Algorithms::ASTAR:
 		m_Distance.resize(m_Maze->m_MazeArea);
 		std::fill(m_Distance.begin(), m_Distance.end(), std::numeric_limits<uint32_t>::max());
 		m_Distance[route.first] = 0;
@@ -218,49 +219,20 @@ void MazeSolver::DijkstraSearch()
 	int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
 
 	m_PQueue.pop();
-	m_Visited.insert(currentCell);
 
 	auto updateNeighbourWeights = [&](uint32_t neighbourCell)
 		{
-			if (m_Visited.find(neighbourCell) != m_Visited.end())
-				return;
+			uint32_t nextCell = neighbourCell;
+			uint32_t nextWeight = m_Maze->m_CellWeights[neighbourCell];
 
-			if (m_Distance[neighbourCell] > m_Distance[currentCell] + m_Maze->m_CellWeights[neighbourCell])
+			// Relaxation
+			if (m_Distance[nextCell] > m_Distance[currentCell] + nextWeight)
 			{
-				m_Parent[neighbourCell] = currentCell;
-				m_Distance[neighbourCell] = m_Distance[currentCell] + m_Maze->m_CellWeights[neighbourCell];
+				m_Distance[nextCell] = m_Distance[currentCell] + nextWeight;
+				m_PQueue.push({ nextCell, m_Distance[nextCell] });
+				m_Maze->m_VisitedCellInfo[neighbourCell] |= Maze::CELL_SEARCHED;
+				m_Parent[nextCell] = currentCell;
 			}
-	
-			uint32_t weightInPQueue = std::numeric_limits<uint32_t>::max();
-			std::priority_queue<WeightDetails, std::vector<WeightDetails>, CompareWeights> tempPQueue;
-
-			while (!m_PQueue.empty())
-			{
-				if (m_PQueue.top().id == neighbourCell)
-				{
-					weightInPQueue = m_PQueue.top().weight;
-				}
-				else
-				{
-					tempPQueue.push(m_PQueue.top());
-				}
-
-				m_PQueue.pop();
-			}
-
-			// This basically has all elements of m_PQueue except the neighbourCell if it existed
-			m_PQueue = tempPQueue;
-
-			if (m_Distance[neighbourCell] < weightInPQueue)
-			{
-				m_PQueue.push({ neighbourCell, m_Distance[neighbourCell] });
-			}
-			else
-			{
-				m_PQueue.push({ neighbourCell, weightInPQueue });
-			}
-
-			m_Maze->m_VisitedCellInfo[neighbourCell] |= Maze::CELL_SEARCHED;
 		};
 
 	// North
@@ -285,6 +257,10 @@ void MazeSolver::DijkstraSearch()
 	}
 }
 
+void MazeSolver::AstarSearch()
+{
+}
+
 void MazeSolver::OnCompletion()
 {
 	if (m_SelectedAlgorithm == MazeSolver::Algorithms::DFS)
@@ -300,7 +276,7 @@ void MazeSolver::OnCompletion()
 		}
 	}
 
-	if (m_SelectedAlgorithm == MazeSolver::Algorithms::BFS || m_SelectedAlgorithm == MazeSolver::Algorithms::DIJKSTRA)
+	if (m_SelectedAlgorithm == MazeSolver::Algorithms::BFS || m_SelectedAlgorithm == MazeSolver::Algorithms::DIJKSTRA || m_SelectedAlgorithm == MazeSolver::Algorithms::ASTAR)
 	{
 		uint32_t currentCell = m_Route->second;
 
@@ -314,4 +290,8 @@ void MazeSolver::OnCompletion()
 		m_Path.push_back(m_Route->first);
 		std::reverse(m_Path.begin(), m_Path.end());
 	}
+
+	m_Completed = true;
+	// Cells - 1 = Paths
+	std::cout << "Maze Solved. Goal is " << m_Path.size() - 1  << " cells away!" << std::endl;
 }

@@ -147,5 +147,7 @@ void Maze::SetCellWeights()
     for (uint32_t i = 0; i < m_MazeArea; i++)
     {
         m_CellWeights.push_back(rand() % m_RandUpperLimit);
+        // Favours top
+        // m_CellWeights.push_back(i % m_CellsAcrossHeight);
     }
 }
