@@ -17,12 +17,15 @@ MazeSolver::MazeSolver(Maze* maze, uint8_t selectedAlgorithm, std::pair<uint32_t
 		m_Queue.push(route.first);
 		break;
 	case Algorithms::DIJKSTRA:
-		m_Maze->m_CellWeights[route.first] = 0;
+		m_Distance.resize(m_Maze->m_MazeArea);
+		std::fill(m_Distance.begin(), m_Distance.end(), std::numeric_limits<uint32_t>::max());
+		m_Distance[route.first] = 0;
 		m_PQueue.push({route.first, 0});
 		break;
 	}
 
 	m_Parent.resize(m_Maze->m_MazeArea);
+	std::fill(m_Parent.begin(), m_Parent.end(), std::numeric_limits<uint32_t>::max());
 	m_Route = &route;
 }
 
@@ -205,9 +208,10 @@ void MazeSolver::DijkstraSearch()
 	}
 
 	WeightDetails weightInfo = m_PQueue.top();
+	int64_t currentCell = static_cast<int64_t>(weightInfo.id);
+	uint32_t currentWeight = weightInfo.weight;
 
 	// To get negative results for checks
-	int64_t currentCell = static_cast<int64_t>(weightInfo.id);
 	uint32_t northIndex = currentCell - 1;
 	uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
 	int64_t southIndex = currentCell + 1;
@@ -221,7 +225,12 @@ void MazeSolver::DijkstraSearch()
 			if (m_Visited.find(neighbourCell) != m_Visited.end())
 				return;
 
-			uint32_t computedWeight = m_Maze->m_CellWeights[currentCell] + m_Maze->m_CellWeights[neighbourCell];
+			if (m_Distance[neighbourCell] > m_Distance[currentCell] + m_Maze->m_CellWeights[neighbourCell])
+			{
+				m_Parent[neighbourCell] = currentCell;
+				m_Distance[neighbourCell] = m_Distance[currentCell] + m_Maze->m_CellWeights[neighbourCell];
+			}
+	
 			uint32_t weightInPQueue = std::numeric_limits<uint32_t>::max();
 			std::priority_queue<WeightDetails, std::vector<WeightDetails>, CompareWeights> tempPQueue;
 
@@ -242,9 +251,9 @@ void MazeSolver::DijkstraSearch()
 			// This basically has all elements of m_PQueue except the neighbourCell if it existed
 			m_PQueue = tempPQueue;
 
-			if (computedWeight < weightInPQueue)
+			if (m_Distance[neighbourCell] < weightInPQueue)
 			{
-				m_PQueue.push({ neighbourCell, computedWeight });
+				m_PQueue.push({ neighbourCell, m_Distance[neighbourCell] });
 			}
 			else
 			{
@@ -252,8 +261,6 @@ void MazeSolver::DijkstraSearch()
 			}
 
 			m_Maze->m_VisitedCellInfo[neighbourCell] |= Maze::CELL_SEARCHED;
-			m_Parent[neighbourCell] = currentCell;
-			m_Maze->m_CellWeights[neighbourCell] = computedWeight < m_Maze->m_CellWeights[neighbourCell] ? computedWeight : m_Maze->m_CellWeights[neighbourCell];
 		};
 
 	// North

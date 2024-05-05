@@ -55,7 +55,10 @@ public:
 	//For BFS
 	std::queue<uint32_t> m_Queue;
 
-	// For Dijkstra
+	// For Dijkstra, A-star
 	std::priority_queue<WeightDetails, std::vector<WeightDetails>, CompareWeights> m_PQueue;
+	std::vector<uint32_t> m_Distance;
 	std::unordered_set<uint32_t> m_Visited;
+
+	// For A-star
 };
