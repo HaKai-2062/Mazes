@@ -52,57 +52,13 @@ const char* pathVertexShader = "#version 330 core\n"
 "}\n";
 
 
-const char* pathFragmentShader = "//Original Shader Source: https://www.shadertoy.com/view/lfXXzH\n"
-"// Author @kyndinfo - 2016\n"
-"// http://www.kynd.info\n"
-"// Title: Marble\n"
-""
-"#version 330 core\n"
+const char* pathFragmentShader = "#version 330 core\n"
 "out vec4 FragColor;\n"
 "in vec4 ourColor;\n"
 "in vec2 ourPos;\n"
 "uniform bool enableAnimation;\n"
 "uniform float colorCycle;\n"
 "uniform float time;\n"
-"float rand(vec2 co) {\n"
-"    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);\n"
-"}"
-"float noise(vec2 p) {\n"
-"    vec2 i = floor(p);  // Integer grid coordinatesn\n"
-"    vec2 f = fract(p);  // Fractional part for interpolation\n"
-
-"    // Smooth Hermite interpolation\n"
-"    f = f * f * (3.0 - 2.0 * f);\n"
-
-"    // Evaluate noise at each corner of the grid cell\n"
-"    float a = rand(i);\n"
-"    float b = rand(i + vec2(1.0, 0.0));\n"
-"    float c = rand(i + vec2(0.0, 1.0));\n"
-"    float d = rand(i + vec2(1.0, 1.0));\n"
-""
-"    // Bilinear interpolation\n"
-"    vec2 u = f;\n"
-"    return mix(mix(a, b, u.x),\n"
-"        mix(c, d, u.x), u.y);\n"
-"}\n"
-""
-"#define OCTAVES 4\n"
-"float fbm(in vec2 pos) {\n"
-"    // Initial values\n"
-"    float value = 0.0;\n"
-"    float amplitud = .5;\n"
-"    // Loop of octaves\n"
-"    for (int i = 0; i < OCTAVES; i++) {\n"
-"        value += amplitud * noise(pos);\n"
-"        pos *= 2.5;\n"
-"        amplitud *= .6;\n"
-"    }\n"
-"    return value;\n"
-"}\n"
-""
-"float edge(in vec2 v, float edge0, float edge1) {\n"
-"    return 1.0 - smoothstep(edge0, edge1, abs(fbm(v) - 0.5));\n"
-"}\n"
 ""
 "// Function to convert HSV to RGB\n"
 "vec3 hsv2rgb(vec3 c) {\n"
@@ -129,29 +85,13 @@ const char* pathFragmentShader = "//Original Shader Source: https://www.shaderto
 "       colorToShow = ourColor.xyz;\n"
 "   }\n"
 ""
+"    vec2 uv = ourPos;\n"
+"    vec3 neonColor = 1.5 * vec3(pow(1.0 - sqrt(abs(uv.y)), 1.5));\n"
 ""
-"   vec3 redMeat = colorToShow;\n"
-"   vec3 fattyMeat = colorToShow;\n"
+"    vec3 myColor = vec3(1.0, 0.0, 0.0);\n"
+"    vec3 finalColor = neonColor * myColor;\n"
 ""
-"   // Animation - pulse using a sine function\n"
-"   float pulse = 0.06 * sin(time * 1.5);  // Values between -0.01 and 0.01\n"
-""
-"   float v0 = edge(ourPos * 4.0, 0.0, 0.5); // Bass-note texture\n"
-"   float v1 = smoothstep(0.6, 0.81, fbm(ourPos * 8.0)); // splotches\n"
-"   float v2 = edge(ourPos * 6.0, 0.0, 0.2); // veins\n"
-"   float v3 = edge(ourPos * 64.0, 0.0, 0.5); // high-note texture\n"
-""
-"   float gradientPos = 0.0;\n"
-"   gradientPos += v0 * 0.55;\n"
-"   gradientPos = mix(gradientPos, 0.45, v1);\n"
-"   gradientPos = mix(gradientPos, 0.74 + pulse, v2);\n"
-"   gradientPos += v3 * 0.27;\n"
-""
-"   vec3 col = redMeat * gradientPos;\n"
-"   col = mix(col, fattyMeat, smoothstep(0.55, 1.0, gradientPos) - smoothstep(0.65, 1.0, gradientPos));\n"
-"   col = mix(col, vec3(0.85), smoothstep(0.95, 1.0, gradientPos));\n"
-""
-"   FragColor = vec4(col, ourColor.w);\n"
+"   FragColor = vec4(finalColor, ourColor.w);\n"
 "}\n";
 
 int main()
@@ -244,8 +184,6 @@ int main()
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        mazeShader.use();
-
         // Clear states of the Maze per frame
         // TDL: This is very inefficient and can be improved?
         application.m_Maze->m_Vertices.clear();
@@ -272,6 +210,8 @@ int main()
 
         uint32_t rectangleCount2 = 0;
         rectangleCount2 = application.GetPathIfFound();
+
+        mazeShader.use();
 
         glBindVertexArray(VAO);
 

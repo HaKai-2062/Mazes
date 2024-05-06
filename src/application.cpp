@@ -195,6 +195,16 @@ uint32_t Application::GetPathIfFound()
 
     std::vector<uint32_t> path = m_MazeSolver->m_Path;
 
+    float aspectRatioX = static_cast<float>(*m_Height) / *m_Width;
+    float aspectRatioY = static_cast<float>(*m_Width) / *m_Height;
+
+    if (aspectRatioX > 1)
+        aspectRatioX = 1;
+    if (aspectRatioY > 1)
+        aspectRatioY = 1;
+
+    float normalizedLineThickness = static_cast<float>(2 * m_Maze->m_LineThickness) / (m_Maze->m_MazeHeight);
+
     while (!path.empty())
     {
         uint32_t firstCell = path.back();
@@ -220,59 +230,65 @@ uint32_t Application::GetPathIfFound()
         }
 
         bool isSouth = secondCell - firstCell == 1 ? true : false;
-        float normalizedHalfCellWidth = static_cast<float>(2 * m_Maze->m_HalfCellHeight) / (m_Maze->m_MazeWidth);
-        float normalizedHalfCellHeight = static_cast<float>(2 * m_Maze->m_HalfCellHeight) / (m_Maze->m_MazeHeight);
-        float normalizedTotalCellWidth = static_cast<float>(2 * m_Maze->m_TotalCellHeight) / (m_Maze->m_MazeWidth);
-        float normalizedTotalCellHeight = static_cast<float>(2 * m_Maze->m_TotalCellHeight) / (m_Maze->m_MazeHeight);
-        float normalizedLineThickness = static_cast<float>(2 * m_Maze->m_LineThickness) / (m_Maze->m_MazeHeight);
 
         std::pair<float, float> firstPoint = m_Maze->m_CellOrigin[firstCell];
         std::pair<float, float> secondPoint = m_Maze->m_CellOrigin[secondCell];
 
+        struct Rect
+        {
+            float x1, y1, x2, y2, x3, y3, x4, y4;
+        };
+
+        Rect line{};
+
         if (isSouth)
         {
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 1);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 2);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
-
             // top left
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(firstPoint.first - normalizedLineThickness, firstPoint.second + (normalDrawing ? 0 : -normalizedLineThickness)));
-            colorOfLineVertex();
+            line.x1 = firstPoint.first - normalizedLineThickness * aspectRatioX;
+            line.y1 = firstPoint.second + (normalDrawing ? 0 : -normalizedLineThickness * aspectRatioY);
             // top right
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(firstPoint.first + normalizedLineThickness, firstPoint.second + (normalDrawing ? 0 : -normalizedLineThickness)));
-            colorOfLineVertex();
+            line.x2 = firstPoint.first + normalizedLineThickness * aspectRatioX;
+            line.y2 = firstPoint.second + (normalDrawing ? 0 : -normalizedLineThickness * aspectRatioY);
             // bottom left
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(secondPoint.first - normalizedLineThickness, secondPoint.second + (normalDrawing ? normalizedLineThickness : 0)));
-            colorOfLineVertex();
+            line.x3 = secondPoint.first - normalizedLineThickness * aspectRatioX;
+            line.y3 = secondPoint.second + (normalDrawing ? normalizedLineThickness * aspectRatioY : 0);
             // bottom right
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(secondPoint.first + normalizedLineThickness, secondPoint.second + (normalDrawing ? normalizedLineThickness : 0)));
-            colorOfLineVertex();
+            line.x4 = secondPoint.first + normalizedLineThickness * aspectRatioX;
+            line.y4 = secondPoint.second + (normalDrawing ? normalizedLineThickness * aspectRatioY : 0);
+
+
         }
         else
         {
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 1);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 2);
-            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
-
             // left top
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(firstPoint.first + (normalDrawing ? 0 : -normalizedLineThickness), firstPoint.second + normalizedLineThickness));
-            colorOfLineVertex();
+            line.x1 = firstPoint.first + (normalDrawing ? 0 : -normalizedLineThickness * aspectRatioX);
+            line.y1 = firstPoint.second + normalizedLineThickness * aspectRatioY;
             // left bottom
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(firstPoint.first + (normalDrawing ? 0 : -normalizedLineThickness), firstPoint.second - normalizedLineThickness));
-            colorOfLineVertex();
+            line.x2 = firstPoint.first + (normalDrawing ? 0 : -normalizedLineThickness * aspectRatioX);
+            line.y2 = firstPoint.second - normalizedLineThickness * aspectRatioY;
             // right top
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(secondPoint.first + (normalDrawing ? normalizedLineThickness : 0), secondPoint.second + normalizedLineThickness));
-            colorOfLineVertex();
+            line.x3 = secondPoint.first + (normalDrawing ? normalizedLineThickness * aspectRatioX : 0);
+            line.y3 = secondPoint.second + normalizedLineThickness * aspectRatioY;
             // right bottom
-            m_Maze->m_LineVertices.push_back(std::make_pair<float, float>(secondPoint.first + (normalDrawing ? normalizedLineThickness : 0), secondPoint.second - normalizedLineThickness));
-            colorOfLineVertex();
+            line.x4 = secondPoint.first + (normalDrawing ? normalizedLineThickness * aspectRatioX : 0);
+            line.y4 = secondPoint.second - normalizedLineThickness * aspectRatioY;
         }
+
+        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
+        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 1);
+        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
+        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
+        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 2);
+        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
+
+        m_Maze->m_LineVertices.push_back({ line.x1, line.y1 });
+        colorOfLineVertex();
+        m_Maze->m_LineVertices.push_back({ line.x2, line.y2 });
+        colorOfLineVertex();
+        m_Maze->m_LineVertices.push_back({ line.x3, line.y3 });
+        colorOfLineVertex();
+        m_Maze->m_LineVertices.push_back({ line.x4, line.y4 });
+        colorOfLineVertex();
         elementsToDraw++;
     }
     return elementsToDraw;
