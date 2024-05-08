@@ -25,7 +25,7 @@ MazeBuilder::MazeBuilder(Maze* maze, uint8_t selectedAlgorithm)
 	{
 		m_Cells = new DisjointSet(maze->m_MazeArea);
 
-		// Add south walls first
+		// Add north walls first
 		for (uint32_t i = 0; i < m_Maze->m_MazeArea; i++)
 		{
 			if (i % m_Maze->m_CellsAcrossHeight == 0)
@@ -56,7 +56,7 @@ MazeBuilder::MazeBuilder(Maze* maze, uint8_t selectedAlgorithm)
 	}
 	case Algorithms::PRIMS:
 	{
-		// Add south walls first
+		// Add north walls first
 		for (uint32_t i = 0; i < m_Maze->m_MazeArea; i++)
 		{
 			if (i % m_Maze->m_CellsAcrossHeight == 0)
@@ -80,10 +80,10 @@ MazeBuilder::MazeBuilder(Maze* maze, uint8_t selectedAlgorithm)
 		m_WallShuffler.clear();
 		m_WallShuffler.reserve(2 * m_Maze->m_MazeArea);
 
-		// S
+		// N
 		if (((m_StartCoordinate + 1) % m_Maze->m_CellsAcrossHeight) != 0)
 			m_WallShuffler.push_back(m_StartCoordinate + 1);
-		// N
+		// S
 		m_WallShuffler.push_back(m_StartCoordinate);
 		// E
 		m_WallShuffler.push_back(m_Maze->m_MazeArea + m_StartCoordinate);
@@ -138,13 +138,13 @@ void MazeBuilder::RecursiveBacktrack()
 	}
 	m_Path.push_back(currentCell);
 
-	uint32_t northIndex = currentCell - 1;
+	uint32_t northIndex = currentCell + 1;
 	uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
-	uint32_t southIndex = currentCell + 1;
+	int64_t southIndex = currentCell - 1;
 	int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
 
 	// North
-	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[northIndex] & Maze::CELL_VISITED) == 0)
+	if ((northIndex % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[northIndex] & Maze::CELL_VISITED) == 0)
 	{
 		neighbours.push_back(0);
 	}
@@ -154,7 +154,7 @@ void MazeBuilder::RecursiveBacktrack()
 		neighbours.push_back(1);
 	}
 	// South
-	if ((southIndex % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[southIndex] & Maze::CELL_VISITED) == 0)
+	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[southIndex] & Maze::CELL_VISITED) == 0)
 	{
 		neighbours.push_back(2);
 	}
@@ -229,8 +229,8 @@ void MazeBuilder::RandomizedKruskal()
 	{
 		if (index < static_cast<uint64_t>(m_Maze->m_CellsAcrossHeight * m_Maze->m_CellsAcrossWidth))
 		{
-			m_Maze->m_VisitedCellInfo[wallToPop.first] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
-			m_Maze->m_VisitedCellInfo[wallToPop.second] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
+			m_Maze->m_VisitedCellInfo[wallToPop.first] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
+			m_Maze->m_VisitedCellInfo[wallToPop.second] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
 		}
 		else if (index >= static_cast<uint64_t>(m_Maze->m_CellsAcrossHeight * m_Maze->m_CellsAcrossWidth))
 		{
@@ -290,17 +290,17 @@ void MazeBuilder::RandomizedPrims()
 
 	if (index < static_cast<uint64_t>(m_Maze->m_CellsAcrossHeight * m_Maze->m_CellsAcrossWidth))
 	{
-		m_Maze->m_VisitedCellInfo[wallToPop.first] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
-		m_Maze->m_VisitedCellInfo[wallToPop.second] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
+		m_Maze->m_VisitedCellInfo[wallToPop.first] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
+		m_Maze->m_VisitedCellInfo[wallToPop.second] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
 
 		if (m_LastCell == wallToPop.second)
 		{
-			// N 
+			// S
 			m_WallShuffler.push_back(m_LastCell);
 		}
 		else
 		{
-			// S
+			// N
 			if (((m_LastCell + 1) % m_Maze->m_CellsAcrossHeight) != 0)
 				m_WallShuffler.push_back(m_LastCell + 1);
 		}
@@ -316,11 +316,12 @@ void MazeBuilder::RandomizedPrims()
 		m_Maze->m_VisitedCellInfo[wallToPop.first] |= (Maze::CELL_VISITED | Maze::CELL_EAST);
 		m_Maze->m_VisitedCellInfo[wallToPop.second] |= (Maze::CELL_VISITED | Maze::CELL_WEST);
 
-		// S
+		// N
 		if (((m_LastCell + 1) % m_Maze->m_CellsAcrossHeight) != 0)
 			m_WallShuffler.push_back(m_LastCell + 1);
-		// N
+		// S
 		m_WallShuffler.push_back(m_LastCell);
+
 		if (m_LastCell == wallToPop.second)
 		{
 			// E
@@ -358,13 +359,13 @@ void MazeBuilder::Wilson()
 	int64_t currentCell = static_cast<int64_t>(m_RandomWalkStart);
 
 	// Pick a random neighbour of start cell
-	uint32_t northIndex = currentCell - 1;
+	uint32_t northIndex = currentCell + 1;
 	uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
-	uint32_t southIndex = currentCell + 1;
+	int64_t southIndex = currentCell - 1;
 	int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
 
 	// North
-	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0)
+	if ((northIndex % m_Maze->m_CellsAcrossHeight) != 0)
 	{
 		neighbours.push_back(0);
 	}
@@ -374,7 +375,7 @@ void MazeBuilder::Wilson()
 		neighbours.push_back(1);
 	}
 	// South
-	if ((southIndex % m_Maze->m_CellsAcrossHeight) != 0)
+	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0)
 	{
 		neighbours.push_back(2);
 	}
@@ -431,8 +432,8 @@ void MazeBuilder::Wilson()
 				}
 				else
 				{
-					m_Maze->m_VisitedCellInfo[m_Path[i]] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
-					m_Maze->m_VisitedCellInfo[m_Path[i + 1]] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
+					m_Maze->m_VisitedCellInfo[m_Path[i]] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
+					m_Maze->m_VisitedCellInfo[m_Path[i + 1]] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
 				}
 			}
 			else
@@ -444,8 +445,8 @@ void MazeBuilder::Wilson()
 				}
 				else
 				{
-					m_Maze->m_VisitedCellInfo[m_Path[i]] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
-					m_Maze->m_VisitedCellInfo[m_Path[i + 1]] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
+					m_Maze->m_VisitedCellInfo[m_Path[i]] |= (Maze::CELL_VISITED | Maze::CELL_SOUTH);
+					m_Maze->m_VisitedCellInfo[m_Path[i + 1]] |= (Maze::CELL_VISITED | Maze::CELL_NORTH);
 				}
 			}
 

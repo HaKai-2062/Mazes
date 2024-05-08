@@ -19,7 +19,6 @@ uint16_t SCR_HEIGHT = 720;
 
 bool windowResized = false;
 
-
 const char* mazeVertexShader = "#version 330 core\n"
 "layout (location = 0) in vec2 aPos;\n"
 "layout(location = 1) in vec4 aColor; \n"
@@ -41,9 +40,15 @@ const char* mazeFragmentShader = "#version 330 core\n"
 
 const char* pathVertexShader = "#version 330 core\n"
 "layout (location = 0) in vec2 aPos;\n"
-"layout(location = 1) in vec4 aColor; \n"
+"layout(location = 1) in vec4 aColor;\n"
+"layout(location = 2) in vec2 aRefPoint;\n"
+"layout(location = 3) in vec2 aDimension;\n"
+""
 "out vec4 ourColor;\n"
 "out vec2 ourPos;\n"
+"out vec2 ourRefPoint;\n"
+"out vec2 ourDimension;\n"
+""
 "void main()\n"
 "{\n"
 "    gl_Position = vec4(aPos.xy, 1.0, 1.0);\n"
@@ -56,6 +61,8 @@ const char* pathFragmentShader = "#version 330 core\n"
 "out vec4 FragColor;\n"
 "in vec4 ourColor;\n"
 "in vec2 ourPos;\n"
+"in vec2 ourRefPoint;\n"
+"in vec2 ourDimension;\n"
 "uniform bool enableAnimation;\n"
 "uniform float colorCycle;\n"
 "uniform float time;\n"
@@ -85,11 +92,15 @@ const char* pathFragmentShader = "#version 330 core\n"
 "       colorToShow = ourColor.xyz;\n"
 "   }\n"
 ""
+"    vec2 refPoint = ourRefPoint;\n"
 "    vec2 uv = ourPos;\n"
-"    vec3 neonColor = 1.5 * vec3(pow(1.0 - sqrt(abs(uv.y)), 1.5));\n"
 ""
-"    vec3 myColor = vec3(1.0, 0.0, 0.0);\n"
-"    vec3 finalColor = neonColor * myColor;\n"
+"    //uv = 2 * (abs(ourPos - ourRefPoint)/ourDimension) - 1.0;\n"
+""
+"    //vec3 neonColor = 1.5 * vec3(pow(1.0 - sqrt(abs(uv.y)), 1.5));\n"
+""
+"    vec3 myColor = vec3(uv.x, uv.y, 0.0);\n"
+"    vec3 finalColor = myColor;\n"
 ""
 "   FragColor = vec4(finalColor, ourColor.w);\n"
 "}\n";
@@ -254,13 +265,22 @@ int main()
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOLine);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, application.m_Maze->m_LineIndices.size() * sizeof(uint32_t), application.m_Maze->m_LineIndices.data(), GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(2 * sizeof(float)));
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(2 * sizeof(float)));
         glEnableVertexAttribArray(1);
 
-        glDrawElements(GL_TRIANGLES, rectangleCount2 * 6, GL_UNSIGNED_INT, 0);
+        // Reference point
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        // Width, Height
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(8 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        // No need to multiply here?
+        glDrawElements(GL_TRIANGLES, rectangleCount2 * 10, GL_UNSIGNED_INT, 0);
 
         glBindVertexArray(0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -73,13 +73,13 @@ void MazeSolver::DepthFirstSearch()
 	int64_t currentCell = static_cast<int64_t>(m_Stack.top());
 	std::vector<uint8_t> neighbours;
 
-	uint32_t northIndex = currentCell - 1;
+	uint32_t northIndex = currentCell + 1;
 	uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
-	int64_t southIndex = currentCell + 1;
+	int64_t southIndex = currentCell - 1;
 	int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
 
 	// North
-	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 &&
+	if ((northIndex % m_Maze->m_CellsAcrossHeight) != 0 &&
 		(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0 && (m_Maze->m_VisitedCellInfo[northIndex] & Maze::CELL_SEARCHED) == 0)
 	{
 		neighbours.push_back(0);
@@ -91,7 +91,7 @@ void MazeSolver::DepthFirstSearch()
 		neighbours.push_back(1);
 	}
 	// South
-	if ((southIndex % m_Maze->m_CellsAcrossHeight) != 0 &&
+	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 &&
 		(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0 && (m_Maze->m_VisitedCellInfo[southIndex] & Maze::CELL_SEARCHED) == 0)
 	{
 		neighbours.push_back(2);
@@ -147,15 +147,15 @@ void MazeSolver::BreadthFirstSearch()
 
 	// To get negative results for checks
 	int64_t currentCell = static_cast<int64_t>(m_Queue.front());
-	uint32_t northIndex = currentCell - 1;
+	uint32_t northIndex = currentCell + 1;
 	uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
-	int64_t southIndex = currentCell + 1;
+	int64_t southIndex = currentCell - 1;
 	int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
 
 	m_Queue.pop();
 
 	// North
-	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 &&
+	if ((northIndex % m_Maze->m_CellsAcrossHeight) != 0 &&
 		(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0 && (m_Maze->m_VisitedCellInfo[northIndex] & Maze::CELL_SEARCHED) == 0)
 	{
 		neighbours.push_back(0);
@@ -167,7 +167,7 @@ void MazeSolver::BreadthFirstSearch()
 		neighbours.push_back(1);
 	}
 	// South
-	if ((southIndex % m_Maze->m_CellsAcrossHeight) != 0 &&
+	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 &&
 		(m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0 && (m_Maze->m_VisitedCellInfo[southIndex] & Maze::CELL_SEARCHED) == 0)
 	{
 		neighbours.push_back(2);
@@ -236,9 +236,9 @@ void MazeSolver::DijkstraSearch()
 	uint32_t currentWeight = weightInfo.weight;
 
 	// To get negative results for checks
-	uint32_t northIndex = currentCell - 1;
+	uint32_t northIndex = currentCell + 1;
 	uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
-	int64_t southIndex = currentCell + 1;
+	int64_t southIndex = currentCell - 1;
 	int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
 
 	m_PQueue.pop();
@@ -259,7 +259,7 @@ void MazeSolver::DijkstraSearch()
 		};
 
 	// North
-	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0 )
+	if ((northIndex % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0)
 	{
 		updateNeighbourWeights(northIndex);
 	}
@@ -269,7 +269,7 @@ void MazeSolver::DijkstraSearch()
 		updateNeighbourWeights(eastIndex);
 	}
 	// South
-	if ((southIndex % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0)
+	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0)
 	{
 		updateNeighbourWeights(southIndex);
 	}
@@ -292,9 +292,9 @@ void MazeSolver::AstarSearch()
 	uint32_t currentWeight = weightInfo.weight;
 
 	// To get negative results for checks
-	uint32_t northIndex = currentCell - 1;
+	uint32_t northIndex = currentCell + 1;
 	uint32_t eastIndex = currentCell + (m_Maze->m_CellsAcrossHeight);
-	int64_t southIndex = currentCell + 1;
+	int64_t southIndex = currentCell - 1;
 	int64_t westIndex = currentCell - (m_Maze->m_CellsAcrossHeight);
 
 	m_PQueue.pop();
@@ -315,7 +315,7 @@ void MazeSolver::AstarSearch()
 		};
 
 	// North
-	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0)
+	if ((northIndex % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_NORTH) != 0)
 	{
 		updateNeighbourWeights(northIndex);
 	}
@@ -325,7 +325,7 @@ void MazeSolver::AstarSearch()
 		updateNeighbourWeights(eastIndex);
 	}
 	// South
-	if ((southIndex % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0)
+	if ((currentCell % m_Maze->m_CellsAcrossHeight) != 0 && (m_Maze->m_VisitedCellInfo[currentCell] & Maze::CELL_SOUTH) != 0)
 	{
 		updateNeighbourWeights(southIndex);
 	}
