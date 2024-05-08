@@ -100,7 +100,8 @@ namespace ImGuiHandler
             imguiWindowResized = true;
         getRegion = ImGui::GetContentRegionAvail();
 
-        ImGui::Image((void*)(unsigned int)(*texture), getRegion);
+        // Because I use the texture from OpenGL, I need to invert the V from the UV.
+        ImGui::Image((void*)(unsigned int)(*texture), getRegion, ImVec2(0, 1), ImVec2(1, 0));
         ImGui::PopStyleVar(3);
         ImGui::End();
 

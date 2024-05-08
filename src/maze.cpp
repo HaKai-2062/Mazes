@@ -34,7 +34,7 @@ uint32_t Maze::DrawMaze(std::vector<uint32_t>* path, std::pair<uint32_t, uint32_
 {
     uint32_t currentCell = 0;
 
-    auto colorOfVertex = [&]()
+    auto colorOfVertex = [&](float uvX, float uvY)
         {
             // RG, BA color of each block
             if (route && currentCell == route->first)
@@ -80,6 +80,13 @@ uint32_t Maze::DrawMaze(std::vector<uint32_t>* path, std::pair<uint32_t, uint32_
 
     float normalizedLineThickness = static_cast<float>(2 * m_LineThickness) / (m_MazeHeight);
 
+    struct Rect
+    {
+        float x1, y1, x2, y2, x3, y3, x4, y4;
+    };
+
+    Rect line;
+
     // This goes from bottomRight (-1, -1) to topLeft (1, 1)
     // WIDTH
     for (float i = -1.0f; i < 1.0f; i += normalizedTotalCellWidth)
@@ -114,19 +121,31 @@ uint32_t Maze::DrawMaze(std::vector<uint32_t>* path, std::pair<uint32_t, uint32_
 
             m_CellOrigin.push_back(std::make_pair<float, float>(i + normalizedHalfCellWidth, j + normalizedHalfCellHeight));
 
+            line.x1 = m_CellOrigin[currentCell].first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness);
+            line.y1 = m_CellOrigin[currentCell].second + normalizedHalfCellHeight + (isWallNorth ? 0 : normalizedWallThickness);
+
+            line.x2 = m_CellOrigin[currentCell].first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness);
+            line.y2 = m_CellOrigin[currentCell].second - normalizedHalfCellHeight;
+
+            line.x3 = m_CellOrigin[currentCell].first - normalizedHalfCellWidth;
+            line.y3 = m_CellOrigin[currentCell].second - normalizedHalfCellHeight;
+
+            line.x4 = m_CellOrigin[currentCell].first - normalizedHalfCellWidth;
+            line.y4 = m_CellOrigin[currentCell].second + normalizedHalfCellHeight + (isWallNorth ? 0 : normalizedWallThickness);
+
             // Draw the cell
             // right top
-            m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness), m_CellOrigin[currentCell].second + normalizedHalfCellHeight + (isWallNorth ? 0 : normalizedWallThickness)));
-            colorOfVertex();
+            m_Vertices.push_back(std::make_pair(line.x1, line.y1));
+            colorOfVertex(line.x1, line.y1);
             // right bottom
-            m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first + normalizedHalfCellWidth + (isWallEast ? 0 : normalizedWallThickness), m_CellOrigin[currentCell].second - normalizedHalfCellHeight));
-            colorOfVertex();
+            m_Vertices.push_back(std::make_pair(line.x2, line.y2));
+            colorOfVertex(line.x2, line.y2);
             // left bottom
-            m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first - normalizedHalfCellWidth, m_CellOrigin[currentCell].second - normalizedHalfCellHeight));
-            colorOfVertex();
+            m_Vertices.push_back(std::make_pair(line.x3, line.y3));
+            colorOfVertex(line.x3, line.y3);
             // left top
-            m_Vertices.push_back(std::make_pair<float, float>(m_CellOrigin[currentCell].first - normalizedHalfCellWidth, m_CellOrigin[currentCell].second + normalizedHalfCellHeight + (isWallNorth ? 0 : normalizedWallThickness)));
-            colorOfVertex();
+            m_Vertices.push_back(std::make_pair(line.x4, line.y4));
+            colorOfVertex(line.x4, line.y4);
 
             currentCell++;
         }
