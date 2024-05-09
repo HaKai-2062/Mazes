@@ -186,13 +186,14 @@ uint32_t Application::GetPathIfFound()
     if (!m_MazeSolver || !m_MazeSolver->m_Completed)
         return 0;
 
-     struct Rect
+    struct Rect
     {
         float x1, y1, x2, y2, x3, y3, x4, y4;
     };
+    Rect line{};
 
     uint32_t elementsToDraw = 0;
-    auto colorAndNormalization = [&](Rect& line, bool leftBottomPush)
+    auto colorAndNormalization = [&]()
         {
             // Color
             m_Maze->m_LineVertices.push_back(std::make_pair(m_ColorPath[0], m_ColorPath[1]));
@@ -200,11 +201,8 @@ uint32_t Application::GetPathIfFound()
 
             // Left bottom vertix to normalize every pixel from it
             // Additionally, Width and heights of line are pushed
-            if (leftBottomPush)
-                m_Maze->m_LineVertices.push_back({ line.x3, line.y3 });
-            else
-                m_Maze->m_LineVertices.push_back({ line.x2, line.y2 });
-            m_Maze->m_LineVertices.push_back({line.x3 - line.x2, line.y1 - line.y3});
+            m_Maze->m_LineVertices.push_back({ line.x3, line.y3 });
+            m_Maze->m_LineVertices.push_back({std::abs(line.x2 - line.x1), std::abs(line.y1 - line.y3)});
         };
 
     std::vector<uint32_t> path = m_MazeSolver->m_Path;
@@ -249,8 +247,6 @@ uint32_t Application::GetPathIfFound()
         std::pair<float, float> firstPoint = m_Maze->m_CellOrigin[firstCell];
         std::pair<float, float> secondPoint = m_Maze->m_CellOrigin[secondCell];
 
-        Rect line{};
-
         if (isNorth)
         {
             // top left
@@ -290,13 +286,13 @@ uint32_t Application::GetPathIfFound()
         m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
 
         m_Maze->m_LineVertices.push_back({ line.x1, line.y1 });
-        colorAndNormalization(line, true);
+        colorAndNormalization();
         m_Maze->m_LineVertices.push_back({ line.x2, line.y2 });
-        colorAndNormalization(line, true);
+        colorAndNormalization();
         m_Maze->m_LineVertices.push_back({ line.x3, line.y3 });
-        colorAndNormalization(line, true);
+        colorAndNormalization();
         m_Maze->m_LineVertices.push_back({ line.x4, line.y4 });
-        colorAndNormalization(line, true);
+        colorAndNormalization();
 
         elementsToDraw++;
     }

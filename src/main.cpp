@@ -54,6 +54,8 @@ const char* pathVertexShader = "#version 330 core\n"
 "    gl_Position = vec4(aPos.xy, 1.0, 1.0);\n"
 "    ourColor = aColor;\n"
 "    ourPos = aPos;\n"
+"    ourRefPoint = aRefPoint;\n"
+"    ourDimension = aDimension;\n"
 "}\n";
 
 
@@ -92,15 +94,25 @@ const char* pathFragmentShader = "#version 330 core\n"
 "       colorToShow = ourColor.xyz;\n"
 "   }\n"
 ""
-"    vec2 refPoint = ourRefPoint;\n"
-"    vec2 uv = ourPos;\n"
+"    vec2 uv;\n"
+"    float d;\n"
+"    if (ourDimension.y > ourDimension.x)\n"
+"    {\n"
+"       uv = 2 * (abs(ourPos - ourRefPoint)/ourDimension) - 1.0;\n"
+"       d = (uv.x - 0.005) * (uv.x + 0.005);\n"
+"    }\n"
+"    else\n"
+"    {\n"
+"       uv = 2 * (abs(ourPos - ourRefPoint)/ourDimension) - 1.0;\n"
+"       d = (uv.y - 0.005) * (uv.y + 0.005);\n"
+"    }\n"
 ""
-"    //uv = 2 * (abs(ourPos - ourRefPoint)/ourDimension) - 1.0;\n"
+"    vec3 col = vec3(step(0., -d));\n"
+"    float glow = 0.001/d;\n"
+"    glow = clamp(glow, 0., 1.);\n"
+"    col += 10. * glow;\n"
 ""
-"    //vec3 neonColor = 1.5 * vec3(pow(1.0 - sqrt(abs(uv.y)), 1.5));\n"
-""
-"    vec3 myColor = vec3(uv.x, uv.y, 0.0);\n"
-"    vec3 finalColor = myColor;\n"
+"    vec3 finalColor = col * colorToShow;\n"
 ""
 "   FragColor = vec4(finalColor, ourColor.w);\n"
 "}\n";
@@ -134,6 +146,9 @@ int main()
     }
 
     ImGuiHandler::Init(glslVersion, window);
+
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Create and bind a framebuffer object (FBO)
     unsigned int framebuffer;
@@ -238,6 +253,7 @@ int main()
         glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(2 * sizeof(float)));
         glEnableVertexAttribArray(1);
 
+        // 6 values in index buffer per cell
         glDrawElements(GL_TRIANGLES, rectangleCount * 6, GL_UNSIGNED_INT, 0);
 
         pathShader.use();
@@ -256,9 +272,6 @@ int main()
             pathShader.setFloat("time", globalAccumulator);
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
         glBindBuffer(GL_ARRAY_BUFFER, VBOLine);
         glBufferData(GL_ARRAY_BUFFER, application.m_Maze->m_LineVertices.size() * sizeof(float) * 2, application.m_Maze->m_LineVertices.data(), GL_STATIC_DRAW);
         
@@ -273,14 +286,17 @@ int main()
 
         // Reference point
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(2);
 
         // Width, Height
         glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(8 * sizeof(float)));
-        glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(3);
 
-        // No need to multiply here?
-        glDrawElements(GL_TRIANGLES, rectangleCount2 * 10, GL_UNSIGNED_INT, 0);
+        // 6 values in index buffer per cell
+        glDrawElements(GL_TRIANGLES, rectangleCount2 * 6, GL_UNSIGNED_INT, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
         glBindVertexArray(0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
