@@ -19,12 +19,6 @@ uint16_t SCR_HEIGHT = 720;
 
 bool windowResized = false;
 
-// mazeVertexShader, mazeFragmentShader, pathVertexShader, pathFragmentShader are defined in them
-#include "../../res/shaders/maze.vs"
-#include "../../res/shaders/maze.ps"
-#include "../../res/shaders/path.vs"
-#include "../../res/shaders/path.ps"
-
 int main()
 {
     srand(clock());
@@ -55,8 +49,8 @@ int main()
 
     ImGuiHandler::Init(glslVersion, window);
 
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Create and bind a framebuffer object (FBO)
     unsigned int framebuffer;
@@ -75,6 +69,12 @@ int main()
     // Check if framebuffer is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "Framebuffer is not complete!" <<std::endl;
+
+    // mazeVertexShader, mazeFragmentShader, pathVertexShader, pathFragmentShader are defined in them
+    #include "../../res/shaders/maze.vs"
+    #include "../../res/shaders/maze.ps"
+    #include "../../res/shaders/path.vs"
+    #include "../../res/shaders/path.ps"
 
     Shader mazeShader(mazeVertexShader.c_str(), mazeFragmentShader.c_str(), true);
     Shader pathShader(pathVertexShader.c_str(), pathFragmentShader.c_str(), true);

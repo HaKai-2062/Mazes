@@ -50,7 +50,7 @@ public:
     uint16_t m_HalfCellHeight = 10;
     uint16_t m_WallThickness = 2;
     uint16_t m_TotalCellHeight = 0;
-    uint16_t m_LineThickness = 1;
+    uint16_t m_LineThickness = 8;
 
 	uint16_t m_MazeWidth = 0, m_MazeHeight = 0;
 	uint32_t m_MazeArea, m_CellsAcrossWidth = 0, m_CellsAcrossHeight = 0, m_VisitedCellCount = 0;

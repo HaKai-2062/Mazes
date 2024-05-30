@@ -20,12 +20,6 @@ vec3 hsv2rgb(vec3 c)
 }
 void main()
 {
-	if (!enableAnimation)
-	{
-		FragColor = ourColor;
-		return;
-	}
-
 	// Calculate hue value based on time
 	float hue = mod(time * colorCycle, 1.0);
 
@@ -39,9 +33,11 @@ void main()
 
 	vec2 uv;
 	float d;
+	vec3 finalColor;
+
 	if (ourDimension.y > ourDimension.x)
 	{
-		uv = 2 * (abs(ourPos - ourRefPoint)/ourDimension) - 1.0;
+		uv = 2.0f * (abs(ourPos - ourRefPoint)/ourDimension) - 1.0f;
 		d = (uv.x - 0.005) * (uv.x + 0.005);
 	}
 	else
@@ -53,9 +49,16 @@ void main()
 	vec3 col = vec3(step(0., -d));
 	float glow = 0.001/d;
 	glow = clamp(glow, 0., 1.);
-	col += 10. * glow;
+	col += 100. * glow;
 
-	vec3 finalColor = (col+backgroundColor) * colorToShow;
+	if (enableAnimation)
+	{
+		finalColor = (col+vec3(0.2)) * colorToShow;
+	}
+	else
+	{
+		finalColor = (col+vec3(0.2)) * ourColor.xyz;
+	}
 
 	FragColor = vec4(finalColor, ourColor.w);
 };
