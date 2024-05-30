@@ -206,6 +206,8 @@ uint32_t Application::GetPathIfFound()
         };
 
     std::vector<uint32_t> path = m_MazeSolver->m_Path;
+    // This is first element to indicate start of line
+    path.push_back(m_Maze->m_MazeArea);
 
     float aspectRatioX = static_cast<float>(*m_Height) / *m_Width;
     float aspectRatioY = static_cast<float>(*m_Width) / *m_Height;
@@ -215,87 +217,170 @@ uint32_t Application::GetPathIfFound()
     if (aspectRatioY > 1)
         aspectRatioY = 1;
 
-    float normalizedLineThickness = static_cast<float>(2 * m_Maze->m_LineThickness) / (m_Maze->m_MazeHeight);
+    // We are multiplying by 2 because the coordinate go from -1 to 1 instead of 0 to 1
+    // Easier to think as dividing by 2 in denominator
+    float normalizedHalfCellWidth = static_cast<float>(2 * m_Maze->m_HalfCellHeight) / (m_Maze->m_MazeWidth);
+    float normalizedHalfCellHeight = static_cast<float>(2 * m_Maze->m_HalfCellHeight) / (m_Maze->m_MazeHeight);
+    float normalizedWallThickness = static_cast<float>(2 * m_Maze->m_WallThickness) / (m_Maze->m_MazeHeight);
+
+    float normalizedTotalCellWidth = static_cast<float>(2 * m_Maze->m_TotalCellHeight) / (m_Maze->m_MazeWidth);
+    float normalizedTotalCellHeight = static_cast<float>(2 * m_Maze->m_TotalCellHeight) / (m_Maze->m_MazeHeight);
+
+    float normalizedHalfLineThickness = static_cast<float>(m_Maze->m_LineThickness) / (m_Maze->m_MazeHeight);
+    float normalizedLineThickness = 2 * normalizedHalfLineThickness;
+
+    enum Directions
+    {
+        NONE = 0,
+        EAST,
+        WEST,
+        NORTH,
+        SOUTH
+    };
+
+    Directions direction = NONE;
 
     while (!path.empty())
     {
+        // This is the previous cell from the current drawing one
+        uint32_t zeroCell = path.back();
+        path.pop_back();
+
+        if (path.empty())
+            break;
         uint32_t firstCell = path.back();
         path.pop_back();
 
         if (path.empty())
             break;
-
         uint32_t secondCell = path.back();
         path.pop_back();
-        path.push_back(secondCell);
 
-        // Adjust spacing by checking whether we are drawing from N-S or S-N or E-W or W-E
-        bool normalDrawing = false;
-
-        // Swap them and always draw towards East and North
-        if (secondCell < firstCell)
+        // Initialized to be max value
+        uint32_t thirdCell = m_Maze->m_MazeArea;
+        if (!path.empty())
         {
-            uint32_t temp = secondCell;
-            secondCell = firstCell;
-            firstCell = temp;
-            normalDrawing = true;
+            thirdCell = path.back();
+            path.pop_back();
         }
 
-        // Guarenteed to not be overflow
-        bool isNorth = secondCell - firstCell == 1 ? true : false;
+        if (thirdCell != m_Maze->m_MazeArea)
+            path.push_back(thirdCell);
+        path.push_back(secondCell);
+        path.push_back(firstCell);
+
+        // Go from cell1 to cell2
+        auto getDirectionToDraw = [&](uint32_t cell1, uint32_t cell2)
+            {
+                if (cell1 == m_Maze->m_MazeArea || cell2 == m_Maze->m_MazeArea)
+                    return NONE;
+
+                if (cell2 > cell1)
+                {
+                    if (cell2 - cell1 == 1)
+                        return SOUTH;
+                    else
+                        return EAST;
+                }
+                else
+                {
+                    if (cell1 - cell2 == 1)
+                        return NORTH;
+                    else
+                        return WEST;
+                }
+            };
+
+        Directions previousDir = getDirectionToDraw(zeroCell, firstCell);
+        Directions mainDir = getDirectionToDraw(firstCell, secondCell);
+        Directions nextDir = getDirectionToDraw(secondCell, thirdCell);
 
         std::pair<float, float> firstPoint = m_Maze->m_CellOrigin[firstCell];
         std::pair<float, float> secondPoint = m_Maze->m_CellOrigin[secondCell];
 
-        if (isNorth)
+        if (mainDir == NORTH)
+        {
+            // bottom left
+            line.x1 = secondPoint.first - (normalizedHalfLineThickness) * aspectRatioX;
+            line.y1 = secondPoint.second + (normalizedHalfLineThickness - (nextDir == EAST ? normalizedLineThickness : 0.0f)) * aspectRatioY;
+            // bottom right
+            line.x2 = secondPoint.first + (normalizedHalfLineThickness) * aspectRatioX;
+            line.y2 = secondPoint.second + (normalizedHalfLineThickness - (nextDir == WEST ? normalizedLineThickness : 0.0f)) * aspectRatioY;
+            // top left
+            line.x3 = firstPoint.first - (normalizedHalfLineThickness) * aspectRatioX;
+            line.y3 = firstPoint.second + (normalizedHalfLineThickness - (previousDir == EAST ? normalizedLineThickness : 0.0f)) * aspectRatioY;
+            // top right
+            line.x4 = firstPoint.first + (normalizedHalfLineThickness) * aspectRatioX;
+            line.y4 = firstPoint.second + (normalizedHalfLineThickness - (previousDir == WEST ? normalizedLineThickness : 0.0f)) * aspectRatioY;
+        }
+        else if (mainDir == SOUTH)
         {
             // top left
-            line.x1 = firstPoint.first - normalizedLineThickness * aspectRatioX;
-            line.y1 = firstPoint.second + (normalDrawing ? 0 : -normalizedLineThickness * aspectRatioY);
+            line.x1 = firstPoint.first - (normalizedHalfLineThickness)*aspectRatioX;
+            line.y1 = firstPoint.second + (normalizedHalfLineThickness - (previousDir == WEST ? normalizedLineThickness : 0.0f)) * aspectRatioY;
             // top right
-            line.x2 = firstPoint.first + normalizedLineThickness * aspectRatioX;
-            line.y2 = firstPoint.second + (normalDrawing ? 0 : -normalizedLineThickness * aspectRatioY);
+            line.x2 = firstPoint.first + (normalizedHalfLineThickness)*aspectRatioX;
+            line.y2 = firstPoint.second + (normalizedHalfLineThickness - (previousDir == EAST ? normalizedLineThickness : 0.0f)) * aspectRatioY;
             // bottom left
-            line.x3 = secondPoint.first - normalizedLineThickness * aspectRatioX;
-            line.y3 = secondPoint.second + (normalDrawing ? normalizedLineThickness * aspectRatioY : 0);
+            line.x3 = secondPoint.first - (normalizedHalfLineThickness)*aspectRatioX;
+            line.y3 = secondPoint.second + (normalizedHalfLineThickness - (nextDir == WEST ? normalizedLineThickness : 0.0f)) * aspectRatioY;
             // bottom right
-            line.x4 = secondPoint.first + normalizedLineThickness * aspectRatioX;
-            line.y4 = secondPoint.second + (normalDrawing ? normalizedLineThickness * aspectRatioY : 0);
+            line.x4 = secondPoint.first + (normalizedHalfLineThickness)*aspectRatioX;
+            line.y4 = secondPoint.second + (normalizedHalfLineThickness - (nextDir == EAST ? normalizedLineThickness : 0.0f)) * aspectRatioY;
         }
-        else
+        else if (mainDir == EAST)
         {
             // top left
-            line.x1 = firstPoint.first + (normalDrawing ? 0 : -normalizedLineThickness * aspectRatioX);
-            line.y1 = firstPoint.second + normalizedLineThickness * aspectRatioY;
+            line.x1 = firstPoint.first + (normalizedHalfLineThickness - (previousDir == SOUTH ? normalizedLineThickness : 0.0f)) * aspectRatioX;
+            line.y1 = firstPoint.second + (normalizedHalfLineThickness) * aspectRatioY;
             // top right
-            line.x2 = secondPoint.first + (normalDrawing ? normalizedLineThickness * aspectRatioX : 0);
-            line.y2 = secondPoint.second + normalizedLineThickness * aspectRatioY;
+            line.x2 = secondPoint.first + (normalizedHalfLineThickness - (nextDir == SOUTH ? normalizedLineThickness : 0.0f)) * aspectRatioX;
+            line.y2 = secondPoint.second + (normalizedHalfLineThickness) * aspectRatioY;
             // bottom left
-            line.x3 = firstPoint.first + (normalDrawing ? 0 : -normalizedLineThickness * aspectRatioX);
-            line.y3 = firstPoint.second - normalizedLineThickness * aspectRatioY;
+            line.x3 = firstPoint.first + (normalizedHalfLineThickness - (previousDir == NORTH ? normalizedLineThickness : 0.0f)) * aspectRatioX;
+            line.y3 = firstPoint.second - (normalizedHalfLineThickness) * aspectRatioY;
             // bottom right
-            line.x4 = secondPoint.first + (normalDrawing ? normalizedLineThickness * aspectRatioX : 0);
-            line.y4 = secondPoint.second - normalizedLineThickness * aspectRatioY;
+            line.x4 = secondPoint.first + (normalizedHalfLineThickness - (nextDir == NORTH ? normalizedLineThickness : 0.0f)) * aspectRatioX;
+            line.y4 = secondPoint.second - (normalizedHalfLineThickness) * aspectRatioY;
+        }
+        else if (mainDir == WEST)
+        {
+            // bottom left
+            line.x1 = secondPoint.first + (normalizedHalfLineThickness - (nextDir == NORTH ? normalizedLineThickness : 0.0f)) * aspectRatioX;
+            line.y1 = secondPoint.second + (normalizedHalfLineThickness) * aspectRatioY;
+            // bottom right
+            line.x2 = firstPoint.first + (normalizedHalfLineThickness - (previousDir == NORTH ? normalizedLineThickness : 0.0f)) * aspectRatioX;
+            line.y2 = firstPoint.second + (normalizedHalfLineThickness) * aspectRatioY;
+            // top left
+            line.x3 = secondPoint.first + (normalizedHalfLineThickness - (nextDir == SOUTH ? normalizedLineThickness : 0.0f)) * aspectRatioX;
+            line.y3 = secondPoint.second - (normalizedHalfLineThickness) * aspectRatioY;
+            // top right
+            line.x4 = firstPoint.first + (normalizedHalfLineThickness - (previousDir == SOUTH ? normalizedLineThickness : 0.0f)) * aspectRatioX;
+            line.y4 = firstPoint.second - (normalizedHalfLineThickness) * aspectRatioY;
         }
 
-        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
-        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 1);
-        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
-        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
-        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 2);
-        m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
+        if (mainDir != NONE)
+        {
+            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
+            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 1);
+            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
+            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 0);
+            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 2);
+            m_Maze->m_LineIndices.push_back((4 * elementsToDraw) + 3);
 
-        m_Maze->m_LineVertices.push_back({ line.x1, line.y1 });
-        colorAndNormalization();
-        m_Maze->m_LineVertices.push_back({ line.x2, line.y2 });
-        colorAndNormalization();
-        m_Maze->m_LineVertices.push_back({ line.x3, line.y3 });
-        colorAndNormalization();
-        m_Maze->m_LineVertices.push_back({ line.x4, line.y4 });
-        colorAndNormalization();
+            m_Maze->m_LineVertices.push_back({ line.x1, line.y1 });
+            colorAndNormalization();
+            m_Maze->m_LineVertices.push_back({ line.x2, line.y2 });
+            colorAndNormalization();
+            m_Maze->m_LineVertices.push_back({ line.x3, line.y3 });
+            colorAndNormalization();
+            m_Maze->m_LineVertices.push_back({ line.x4, line.y4 });
+            colorAndNormalization();
+        }
 
         elementsToDraw++;
     }
+
     return elementsToDraw;
 }
 

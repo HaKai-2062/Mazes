@@ -274,14 +274,14 @@ int main()
 
         glBindBuffer(GL_ARRAY_BUFFER, VBOLine);
         glBufferData(GL_ARRAY_BUFFER, application.m_Maze->m_LineVertices.size() * sizeof(float) * 2, application.m_Maze->m_LineVertices.data(), GL_STATIC_DRAW);
-        
+
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOLine);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, application.m_Maze->m_LineIndices.size() * sizeof(uint32_t), application.m_Maze->m_LineIndices.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(2 * sizeof(float)));
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(2 * sizeof(float))); 
         glEnableVertexAttribArray(1);
 
         // Reference point
@@ -292,8 +292,10 @@ int main()
         glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(8 * sizeof(float)));
         glEnableVertexAttribArray(3);
 
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         // 6 values in index buffer per cell
         glDrawElements(GL_TRIANGLES, rectangleCount2 * 6, GL_UNSIGNED_INT, 0);
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
