@@ -19,103 +19,11 @@ uint16_t SCR_HEIGHT = 720;
 
 bool windowResized = false;
 
-const char* mazeVertexShader = "#version 330 core\n"
-"layout (location = 0) in vec2 aPos;\n"
-"layout(location = 1) in vec4 aColor; \n"
-"out vec4 ourColor;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = vec4(aPos.xy, 1.0, 1.0);\n"
-"    ourColor = aColor;\n"
-"}\n";
-
-const char* mazeFragmentShader = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"in vec4 ourColor;\n"
-"void main()\n"
-"{\n"
-"   FragColor = ourColor;\n"
-"}\n";
-
-
-const char* pathVertexShader = "#version 330 core\n"
-"layout (location = 0) in vec2 aPos;\n"
-"layout(location = 1) in vec4 aColor;\n"
-"layout(location = 2) in vec2 aRefPoint;\n"
-"layout(location = 3) in vec2 aDimension;\n"
-""
-"out vec4 ourColor;\n"
-"out vec2 ourPos;\n"
-"out vec2 ourRefPoint;\n"
-"out vec2 ourDimension;\n"
-""
-"void main()\n"
-"{\n"
-"    gl_Position = vec4(aPos.xy, 1.0, 1.0);\n"
-"    ourColor = aColor;\n"
-"    ourPos = aPos;\n"
-"    ourRefPoint = aRefPoint;\n"
-"    ourDimension = aDimension;\n"
-"}\n";
-
-
-const char* pathFragmentShader = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"in vec4 ourColor;\n"
-"in vec2 ourPos;\n"
-"in vec2 ourRefPoint;\n"
-"in vec2 ourDimension;\n"
-"uniform bool enableAnimation;\n"
-"uniform float colorCycle;\n"
-"uniform float time;\n"
-""
-"// Function to convert HSV to RGB\n"
-"vec3 hsv2rgb(vec3 c) {\n"
-"    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);\n"
-"    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);\n"
-"    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);\n"
-"}\n"
-"void main()\n"
-"{\n"
-"   if (!enableAnimation)\n"
-"   {\n"
-"       FragColor = ourColor;\n"
-"       return;\n"
-"   }\n"
-""
-"   // Calculate hue value based on time\n"
-"   float hue = mod(time * colorCycle, 1.0);\n"
-""
-"   // Convert hue to RGB color\n"
-"   vec3 colorToShow = hsv2rgb(vec3(hue, 1.0, 1.0));\n"
-""
-"   if (hue == 0.0f)\n"
-"   {\n"
-"       colorToShow = ourColor.xyz;\n"
-"   }\n"
-""
-"    vec2 uv;\n"
-"    float d;\n"
-"    if (ourDimension.y > ourDimension.x)\n"
-"    {\n"
-"       uv = 2 * (abs(ourPos - ourRefPoint)/ourDimension) - 1.0;\n"
-"       d = (uv.x - 0.005) * (uv.x + 0.005);\n"
-"    }\n"
-"    else\n"
-"    {\n"
-"       uv = 2 * (abs(ourPos - ourRefPoint)/ourDimension) - 1.0;\n"
-"       d = (uv.y - 0.005) * (uv.y + 0.005);\n"
-"    }\n"
-""
-"    vec3 col = vec3(step(0., -d));\n"
-"    float glow = 0.001/d;\n"
-"    glow = clamp(glow, 0., 1.);\n"
-"    col += 10. * glow;\n"
-""
-"    vec3 finalColor = col * colorToShow;\n"
-""
-"   FragColor = vec4(finalColor, ourColor.w);\n"
-"}\n";
+// mazeVertexShader, mazeFragmentShader, pathVertexShader, pathFragmentShader are defined in them
+#include "../../res/shaders/maze.vs"
+#include "../../res/shaders/maze.ps"
+#include "../../res/shaders/path.vs"
+#include "../../res/shaders/path.ps"
 
 int main()
 {
@@ -168,8 +76,8 @@ int main()
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "Framebuffer is not complete!" <<std::endl;
 
-    Shader mazeShader(mazeVertexShader, mazeFragmentShader, true);
-    Shader pathShader(pathVertexShader, pathFragmentShader, true);
+    Shader mazeShader(mazeVertexShader.c_str(), mazeFragmentShader.c_str(), true);
+    Shader pathShader(pathVertexShader.c_str(), pathFragmentShader.c_str(), true);
 
     uint32_t VAO, VBO, EBO, VBOLine, EBOLine;
     glGenVertexArrays(1, &VAO);
@@ -271,6 +179,8 @@ int main()
             localAccumulator = 0.0f;
             pathShader.setFloat("time", globalAccumulator);
         }
+
+        pathShader.setVec3("backgroundColor", application.m_Maze->m_ColorBackground[0], application.m_Maze->m_ColorBackground[1], application.m_Maze->m_ColorBackground[2]);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBOLine);
         glBufferData(GL_ARRAY_BUFFER, application.m_Maze->m_LineVertices.size() * sizeof(float) * 2, application.m_Maze->m_LineVertices.data(), GL_STATIC_DRAW);
