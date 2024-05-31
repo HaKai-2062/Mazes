@@ -1,6 +1,8 @@
 # Mazes
 
 ## Features
+- Shift and left mouse click is used to select the start cell indicated by green.
+- Shift and right mouse click is used to select the end cell indicated by red.
 - Dockable window and maze is automatically adjusted according to available viewport space.
 - Mazes aka labyrinth can be generated using 4 building algorithms: Recursive Backtrack, Kruskal, Prints, Wilson.
 - 4 solving algorithms can be used to get path from start cell to end cell: DFS, BFS, Dijkstra, A(*) star.
