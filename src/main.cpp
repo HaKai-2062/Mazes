@@ -110,8 +110,6 @@ int main()
 
         double mouseX = 0.0, mouseY = 0.0;
 
-        glfwGetCursorPos(window, &mouseX, &mouseY);
-
         ImGuiID dockSpaceID;
         ImGuiHandler::BeginFrame(dockSpaceID, showDemoWindow, application);
 
@@ -311,8 +309,8 @@ void processInput(GLFWwindow* window, double& mouseX, double& mouseY, ImVec2& vM
         float normalizedTotalCellWidth = static_cast<float>(application.m_Maze->m_TotalCellHeight) / (application.m_Maze->m_MazeWidth);
         float normalizedTotalCellHeight = static_cast<float>(application.m_Maze->m_TotalCellHeight) / (application.m_Maze->m_MazeHeight);
 
-        int cellInX = int(xPos / normalizedTotalCellWidth);
-        int cellInY = int(yPos / normalizedTotalCellHeight);
+        int cellInX = static_cast<int>(xPos / normalizedTotalCellWidth);
+        int cellInY = static_cast<int>(yPos / normalizedTotalCellHeight);
 
         uint32_t cellNumber = cellInX * application.m_Maze->m_CellsAcrossHeight + cellInY;
 
