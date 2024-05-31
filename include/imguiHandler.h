@@ -68,7 +68,7 @@ namespace ImGuiHandler
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        dockSpaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_HiddenTabBar);
+        dockSpaceID = ImGui::DockSpaceOverViewport(0U, ImGui::GetMainViewport(), ImGuiDockNodeFlags_HiddenTabBar);
 
         ImGui::Begin("Main");
         if (ImGui::BeginTabBar("MainTab"))
