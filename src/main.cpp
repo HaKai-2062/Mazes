@@ -11,7 +11,7 @@
 #include "imguiHandler.h"
 
 void callbackResize(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow* window, double& mouseX, double& mouseY, ImVec2& vMin, ImVec2& vMax, Application& application);
 
 // settings
 uint16_t SCR_WIDTH = 1280;
@@ -108,7 +108,9 @@ int main()
         lastFrameTime = currentFrameTime;
         localAccumulator += deltaTime;
 
-        processInput(window);
+        double mouseX = 0.0, mouseY = 0.0;
+
+        glfwGetCursorPos(window, &mouseX, &mouseY);
 
         ImGuiID dockSpaceID;
         ImGuiHandler::BeginFrame(dockSpaceID, showDemoWindow, application);
@@ -180,8 +182,6 @@ int main()
             pathShader.setFloat("time", globalAccumulator);
         }
 
-        pathShader.setVec3("backgroundColor", application.m_Maze->m_ColorBackground[0], application.m_Maze->m_ColorBackground[1], application.m_Maze->m_ColorBackground[2]);
-
         glBindBuffer(GL_ARRAY_BUFFER, VBOLine);
         glBufferData(GL_ARRAY_BUFFER, application.m_Maze->m_LineVertices.size() * sizeof(float) * 2, application.m_Maze->m_LineVertices.data(), GL_STATIC_DRAW);
 
@@ -218,6 +218,22 @@ int main()
         ImGui::End();
 
         ImGuiHandler::EndFrame(dockSpaceID, &texture, getRegion, windowResized);
+
+        ImVec2 vMin = ImGui::GetWindowContentRegionMin();
+        ImVec2 vMax = ImGui::GetWindowContentRegionMax();
+
+        vMin.x += ImGui::GetWindowPos().x;
+        vMin.y += ImGui::GetWindowPos().y;
+        vMax.x += ImGui::GetWindowPos().x;
+        vMax.y += ImGui::GetWindowPos().y;
+
+        //ImGui::GetForegroundDrawList()->AddRect(vMin, vMax, IM_COL32(255, 255, 0, 255));
+
+        processInput(window, mouseX, mouseY, vMin, vMax, application);
+
+        ImGui::End();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // Delete old framebuffer and create a new one
         if (windowResized)
@@ -276,10 +292,39 @@ int main()
     return 0;
 }
 
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow* window, double& mouseX, double& mouseY, ImVec2& vMin, ImVec2& vMax, Application& application)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    if ((glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) 
+        && ((glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) || (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)))
+    {
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+        int windowX = 0, windowY = 0;
+        glfwGetWindowPos(window, &windowX, &windowY);
+
+        // These x,y are from 0,0 top left to 1,1 bottom right
+        double xPos = (mouseX - vMin.x + windowX) / (vMax.x - vMin.x);
+        double yPos = (mouseY - vMin.y + windowY) / (vMax.y - vMin.y);
+
+        float normalizedTotalCellWidth = static_cast<float>(application.m_Maze->m_TotalCellHeight) / (application.m_Maze->m_MazeWidth);
+        float normalizedTotalCellHeight = static_cast<float>(application.m_Maze->m_TotalCellHeight) / (application.m_Maze->m_MazeHeight);
+
+        int cellInX = int(xPos / normalizedTotalCellWidth);
+        int cellInY = int(yPos / normalizedTotalCellHeight);
+
+        uint32_t cellNumber = cellInX * application.m_Maze->m_CellsAcrossHeight + cellInY;
+
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+        {
+            application.m_Route.first = cellNumber;
+        }
+        else
+        {
+            application.m_Route.second = cellNumber;
+        }
+    }
 }
 
 void callbackResize(GLFWwindow* window, int width, int height)

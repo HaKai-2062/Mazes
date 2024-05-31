@@ -104,10 +104,6 @@ namespace ImGuiHandler
         //ImGui::Image((void*)(unsigned int)(*texture), getRegion, ImVec2(0, 1), ImVec2(1, 0));
         ImGui::Image((void*)(unsigned int)(*texture), getRegion);
         ImGui::PopStyleVar(3);
-        ImGui::End();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
     void ControlTab(bool& showDemoWindow, Application& application)
