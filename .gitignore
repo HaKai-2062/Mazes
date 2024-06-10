@@ -3,7 +3,6 @@ bin/
 build/
 /.vs
 .idea/
-CMakeSettings.json
 
 vendor/GLFW/*
 vendor/imgui-docking/*
